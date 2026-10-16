@@ -6,6 +6,8 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+import { carouselLocTagsPlugin } from './src/linkedin-carousels/carousel-loc-tags-plugin'
+
 const config = defineConfig({
   fmt: { semi: false, singleQuote: true, trailingComma: 'all', ignorePatterns: ['.agents/**'] },
   lint: {
@@ -15,7 +17,14 @@ const config = defineConfig({
     ignorePatterns: ['.agents/**'],
   },
   resolve: { tsconfigPaths: true },
-  plugins: lazyPlugins(() => [devtools(), tailwindcss(), tanstackStart(), viteReact()]),
+  // carouselLocTagsPlugin first: its locations must come from the untransformed file.
+  plugins: lazyPlugins(() => [
+    carouselLocTagsPlugin(),
+    devtools(),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ]),
 })
 
 export default config
