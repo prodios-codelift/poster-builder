@@ -49,12 +49,32 @@ import { saveCarouselText } from '@/linkedin-carousels/save-carousel-text'
 import { useCarouselInlineEdit } from '@/linkedin-carousels/use-carousel-inline-edit'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/linkedin-carousel/')({
-  component: RouteComponent,
-})
-
 type LibraryTab = 'posts' | 'themes'
 type StudioView = 'slide' | 'overview'
+
+/** Studio state kept in the URL so a refresh reopens the same slide. Defaults are omitted. */
+type CarouselSearch = {
+  tab?: LibraryTab
+  carousel?: string
+  /** 1-based slide number. */
+  slide?: number
+  view?: StudioView
+}
+
+function validateCarouselSearch(search: Record<string, unknown>): CarouselSearch {
+  const slide = Number(search.slide)
+  return {
+    tab: search.tab === 'posts' || search.tab === 'themes' ? search.tab : undefined,
+    carousel: typeof search.carousel === 'string' && search.carousel ? search.carousel : undefined,
+    slide: Number.isInteger(slide) && slide >= 1 ? slide : undefined,
+    view: search.view === 'overview' ? 'overview' : undefined,
+  }
+}
+
+export const Route = createFileRoute('/linkedin-carousel/')({
+  validateSearch: validateCarouselSearch,
+  component: RouteComponent,
+})
 
 function libraryForTab(tab: LibraryTab): LinkedInCarousel[] {
   return tab === 'posts' ? carousels : themes
@@ -145,11 +165,18 @@ function ScaledSlide({
     >
       <div
         className="relative overflow-hidden shadow-lg"
-        style={{
-          width: ready ? displayWidth : 0,
-          height: ready ? displayHeight : 0,
-          visibility: ready ? 'visible' : 'hidden',
-        }}
+        style={
+          ready
+            ? { width: displayWidth, height: displayHeight }
+            : fit === 'width'
+              ? // Reserve the thumb's height before measuring so scrollIntoView lands correctly.
+                {
+                  width: '100%',
+                  aspectRatio: `${CAROUSEL_WIDTH} / ${CAROUSEL_HEIGHT}`,
+                  visibility: 'hidden',
+                }
+              : { width: 0, height: 0, visibility: 'hidden' }
+        }
       >
         <div
           ref={slideInnerRef}
@@ -243,6 +270,13 @@ function LibraryList({
   emptyLabel: string
   onSelect: (id: string) => void
 }) {
+  const selectedRef = useRef<HTMLButtonElement>(null)
+
+  // Bring a selection restored from the URL into view; a no-op after a click.
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [selectedId])
+
   if (items.length === 0) {
     return <p className="px-2 py-3 text-sm text-muted-foreground">{emptyLabel}</p>
   }
@@ -256,6 +290,7 @@ function LibraryList({
           <li key={carousel.id}>
             <button
               type="button"
+              ref={isSelected ? selectedRef : undefined}
               onClick={() => onSelect(carousel.id)}
               className={cn(
                 'flex w-full flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
@@ -340,14 +375,8 @@ function OverviewGrid({
 }
 
 function RouteComponent() {
-  const initialTab = defaultTab()
-  const [activeTab, setActiveTab] = useState<LibraryTab>(initialTab)
-  const [selectedByTab, setSelectedByTab] = useState<Record<LibraryTab, string | null>>(() => ({
-    posts: carousels[0]?.id ?? null,
-    themes: themes[0]?.id ?? null,
-  }))
-  const [slideIndex, setSlideIndex] = useState(0)
-  const [studioView, setStudioView] = useState<StudioView>('slide')
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
   const [isExporting, setIsExporting] = useState(false)
   const overviewGridRef = useRef<HTMLDivElement>(null)
   const [slideCanvasElement, setSlideCanvasElement] = useState<HTMLDivElement | null>(null)
@@ -355,24 +384,33 @@ function RouteComponent() {
     setSlideCanvasElement(element)
   }, [])
 
+  const activeTab = search.tab ?? defaultTab()
+  const studioView: StudioView = search.view ?? 'slide'
   const library = libraryForTab(activeTab)
-  const selectedId = selectedByTab[activeTab]
 
   const selected = useMemo(
-    () => library.find((carousel) => carousel.id === selectedId) ?? null,
-    [library, selectedId],
+    () => library.find((carousel) => carousel.id === search.carousel) ?? library[0] ?? null,
+    [library, search.carousel],
   )
+  const selectedId = selected?.id ?? null
 
-  const isUserPost =
-    activeTab === 'posts' && Boolean(selectedId && carousels.some((c) => c.id === selectedId))
+  const isUserPost = activeTab === 'posts' && Boolean(selected)
   const canInlineEdit =
     import.meta.env.DEV && isUserPost && studioView === 'slide' && Boolean(selected)
 
   const totalSlides = selected?.slides.length ?? 0
+  const slideIndex = Math.min(Math.max((search.slide ?? 1) - 1, 0), Math.max(totalSlides - 1, 0))
   const CurrentSlide = selected?.slides[slideIndex]
   const canGoPrev = slideIndex > 0
   const canGoNext = slideIndex < totalSlides - 1
   const canExport = Boolean(selected) && !isExporting
+
+  // Remember each tab's pick for the session so switching tabs back restores it.
+  const lastSelectedByTab = useRef<Partial<Record<LibraryTab, string>>>({})
+
+  useEffect(() => {
+    if (selectedId) lastSelectedByTab.current[activeTab] = selectedId
+  }, [activeTab, selectedId])
 
   useCarouselInlineEdit({
     enabled: canInlineEdit,
@@ -383,21 +421,46 @@ function RouteComponent() {
 
   useEffect(() => {
     clearCarouselTextEdits()
-  }, [selectedByTab.posts])
+  }, [activeTab, selectedId])
 
-  useEffect(() => {
-    if (activeTab !== 'posts') clearCarouselTextEdits()
-  }, [activeTab])
+  /** Replace (not push) so stepping through slides does not fill browser history. */
+  const updateSearch = useCallback(
+    (patch: Partial<CarouselSearch>) => {
+      void navigate({
+        search: (prev) => ({ ...prev, ...patch }),
+        replace: true,
+        resetScroll: false,
+      })
+    },
+    [navigate],
+  )
+
+  const goToSlide = useCallback(
+    (index: number) => {
+      const next = Math.min(Math.max(index, 0), Math.max(totalSlides - 1, 0))
+      updateSearch({ slide: next === 0 ? undefined : next + 1 })
+    },
+    [totalSlides, updateSearch],
+  )
+
+  const setStudioView = useCallback(
+    (view: StudioView) => {
+      updateSearch({ view: view === 'overview' ? 'overview' : undefined })
+    },
+    [updateSearch],
+  )
 
   function selectCarousel(id: string) {
-    setSelectedByTab((current) => ({ ...current, [activeTab]: id }))
-    setSlideIndex(0)
+    updateSearch({ carousel: id, slide: undefined })
   }
 
   function switchTab(tab: string | number | null) {
     if (tab !== 'posts' && tab !== 'themes') return
-    setActiveTab(tab)
-    setSlideIndex(0)
+    updateSearch({
+      tab: tab === defaultTab() ? undefined : tab,
+      carousel: lastSelectedByTab.current[tab],
+      slide: undefined,
+    })
   }
 
   function switchStudioView(view: string | number | null) {
@@ -406,8 +469,7 @@ function RouteComponent() {
   }
 
   function openSlide(index: number) {
-    setSlideIndex(index)
-    setStudioView('slide')
+    updateSearch({ slide: index === 0 ? undefined : index + 1, view: undefined })
   }
 
   useEffect(() => {
@@ -447,7 +509,7 @@ function RouteComponent() {
         if (!canGoPrev) return
         event.preventDefault()
         event.stopPropagation()
-        setSlideIndex((index) => index - 1)
+        goToSlide(slideIndex - 1)
         return
       }
 
@@ -455,7 +517,7 @@ function RouteComponent() {
         if (!canGoNext) return
         event.preventDefault()
         event.stopPropagation()
-        setSlideIndex((index) => index + 1)
+        goToSlide(slideIndex + 1)
         return
       }
 
@@ -467,7 +529,7 @@ function RouteComponent() {
         if (slideIndex === 0) return
         event.preventDefault()
         event.stopPropagation()
-        setSlideIndex((index) => Math.max(index - columns, 0))
+        goToSlide(slideIndex - columns)
         return
       }
 
@@ -475,13 +537,13 @@ function RouteComponent() {
         if (slideIndex >= totalSlides - 1) return
         event.preventDefault()
         event.stopPropagation()
-        setSlideIndex((index) => Math.min(index + columns, totalSlides - 1))
+        goToSlide(slideIndex + columns)
       }
     }
 
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [canGoNext, canGoPrev, slideIndex, studioView, totalSlides])
+  }, [canGoNext, canGoPrev, goToSlide, setStudioView, slideIndex, studioView, totalSlides])
 
   async function runExport(action: 'pdf' | 'images') {
     if (!selected || isExporting) return
@@ -602,7 +664,7 @@ function RouteComponent() {
                     size="icon"
                     aria-label="Previous slide"
                     disabled={!canGoPrev}
-                    onClick={() => setSlideIndex((index) => index - 1)}
+                    onClick={() => goToSlide(slideIndex - 1)}
                   >
                     <ChevronLeftIcon />
                   </Button>
@@ -614,7 +676,7 @@ function RouteComponent() {
                     size="icon"
                     aria-label="Next slide"
                     disabled={!canGoNext}
-                    onClick={() => setSlideIndex((index) => index + 1)}
+                    onClick={() => goToSlide(slideIndex + 1)}
                   >
                     <ChevronRightIcon />
                   </Button>
