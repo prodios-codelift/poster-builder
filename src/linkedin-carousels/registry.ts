@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 
+import { slides as uaeBuyerRequirementSlides } from './carousels/uae-buyer-requirement'
 import { slides as uaeOmnichannelCrmSlides } from './carousels/uae-omnichannel-crm'
 import * as auroraGlowTheme from './themes/aurora-glow'
 import * as bentoPopTheme from './themes/bento-pop'
@@ -39,6 +40,11 @@ function themeEntries(id: string, name: string, theme: ThemeDemo): LinkedInCarou
 
 /** User-created carousels shown under My posts. */
 export const carousels: LinkedInCarousel[] = [
+  {
+    id: 'uae-buyer-requirement',
+    name: 'Match inventory to the buyer brief',
+    slides: uaeBuyerRequirementSlides,
+  },
   {
     id: 'uae-omnichannel-crm',
     name: 'One inbox: AI-native CRM for the UAE',
