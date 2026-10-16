@@ -4,7 +4,8 @@ import { domToBlob } from 'modern-screenshot'
 import { createElement, type FC } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
-import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH, type LinkedInCarousel } from './registry'
+import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from './dimensions'
+import type { LinkedInCarousel } from './types'
 
 function toSlug(name: string) {
   return (

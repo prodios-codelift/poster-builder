@@ -1,6 +1,6 @@
-import { LinkedInCarouselSlide } from './linkedin-carousel-slide'
+import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
 
-function SlideOne() {
+function Intro() {
   return (
     <LinkedInCarouselSlide className="flex flex-col justify-center gap-6 p-20">
       <p className="text-2xl font-medium tracking-wide text-neutral-500 uppercase">
@@ -13,7 +13,7 @@ function SlideOne() {
   )
 }
 
-function SlideTwo() {
+function Components() {
   return (
     <LinkedInCarouselSlide className="flex flex-col justify-center gap-8 bg-neutral-950 p-20 text-white">
       <h2 className="text-6xl leading-tight font-bold tracking-tight">
@@ -26,7 +26,7 @@ function SlideTwo() {
   )
 }
 
-function SlideThree() {
+function Preview() {
   return (
     <LinkedInCarouselSlide className="flex flex-col justify-between bg-amber-50 p-20">
       <h2 className="text-6xl leading-tight font-bold tracking-tight text-neutral-900">
@@ -37,4 +37,4 @@ function SlideThree() {
   )
 }
 
-export const sampleSlides = [SlideOne, SlideTwo, SlideThree]
+export const slides = [Intro, Components, Preview]
