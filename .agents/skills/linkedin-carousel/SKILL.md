@@ -1,6 +1,6 @@
 ---
 name: linkedin-carousel
-description: Use this skill when the user wants to create, draft, generate or edit a LinkedIn carousel (a multi-slide LinkedIn document post) in this poster-builder repo. Triggers on phrases like "make a LinkedIn carousel about X", "carousel post", "turn this post / article / thread into a carousel", "add a slide to the <name> carousel", or any edit under `src/linkedin-carousels/carousels/`. Do NOT use for creating themes (use `linkedin-carousel-theme`) or for changing the studio, export or engine code.
+description: Use this skill when the user wants to create, draft, generate or edit a LinkedIn carousel (a multi-slide LinkedIn document post) in this poster-builder repo. Triggers on phrases like "create a post", "make a LinkedIn post", "new carousel", "make a LinkedIn carousel about X", "carousel post", "turn this post / article / thread into a carousel", "add a slide to the <name> carousel", or any edit under `src/linkedin-carousels/carousels/`. Do NOT use for creating themes (use `linkedin-carousel-theme`) or for changing the studio, export or engine code.
 ---
 
 # Create a LinkedIn carousel
@@ -11,9 +11,11 @@ A carousel is one file, `src/linkedin-carousels/carousels/<slug>/index.tsx` (plu
 
 ## Step 1 — Pick a theme
 
-List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio Themes tab once per palette as `<Name> · <Palette>`). The frontmatter `description` and `mode` of each `theme.md` are enough to shortlist.
+**Required on create.** When the user asks to create a new post or carousel, stop and settle the theme **before** Step 2's other questions, before the outline, and before any JSX. Do **not** pick a theme yourself.
 
-If any themes exist, call `AskUserQuestion` with the theme ids as options plus a final **"No theme — design from scratch"**. With 4+ themes, offer the 3 most relevant to the topic and tone (professional, dark/techy, colourful/playful); the auto-added "Other" covers the rest. Skip the question if the user already named a theme.
+List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio Themes tab once per palette as `<Name> · <Palette>`). The frontmatter `name`, `description` and `mode` of each `theme.md` are enough to shortlist.
+
+If any themes exist, call `AskUserQuestion` with the theme ids as options (label each with its frontmatter `name`) plus a final **"No theme — design from scratch"**. With 4+ themes, offer the 3 most relevant to the topic and tone (professional, dark/techy, colourful/playful); the auto-added "Other" covers the rest. Skip the question **only** when the user already named a theme id or folder — then restate that choice. Wait for the answer before continuing.
 
 Each theme lists **palette variants** in its `## Palette variants` section. Use the default unless the user names a palette or brand colours; if they ask for a different look, offer the variants (same question, or a follow-up) rather than inventing colours.
 
@@ -108,4 +110,4 @@ Tell the user:
 
 ## Editing an existing carousel
 
-Read the carousel's `index.tsx` (and its `// Theme:` line → that theme's `theme.md` for the rules). Keep the existing tokens and components; don't restyle unless asked. When adding, removing or reordering slides, update the `slides` array **and renumber every `Footer page / total`**.
+Read the carousel's `index.tsx` (and its `// Theme:` line → that theme's `theme.md` for the rules). Keep the existing tokens and components; don't restyle unless asked. Do **not** re-ask for a theme when adding, removing or reordering slides — keep the carousel's existing `// Theme:` line. When adding, removing or reordering slides, update the `slides` array **and renumber every `Footer page / total`**.
