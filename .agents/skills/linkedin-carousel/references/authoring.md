@@ -7,7 +7,7 @@ Source of truth for writing or editing `src/linkedin-carousels/carousels/<slug>/
 - A carousel is **one `index.tsx` + optional `assets/`** in `src/linkedin-carousels/carousels/<slug>/`. No sibling `.tsx`/`.ts` files, no `components/`, no README. Helpers live inside `index.tsx`.
 - The only file you may touch outside the folder is `src/linkedin-carousels/registry.ts` (one import + one entry).
 - Never edit engine files: `linkedin-carousel-slide.tsx`, `export-carousel.ts`, `dimensions.ts`, `types.ts`, `src/routes/**`, `src/styles.css`, `package.json`.
-- No new dependencies. Available: `react`, `cn` (Tailwind class merge), Tailwind v4 utilities, `lucide-react` icons, standard web APIs.
+- No new dependencies. Available: `react`, `cn` (Tailwind class merge), Tailwind v4 utilities, `@solar-icons/react` and `lucide-react` icons, standard web APIs.
 - Never import from `themes/` — copy the theme's snippets in. Paste only the components you actually use: the project type-checks with `noUnusedLocals`, so an unused function fails `vp check`.
 
 ## File contract
@@ -206,7 +206,8 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - **Stock photos** are allowed when the theme's photo slides (`PhotoCover`, `ImageSplit`) fit the topic. Copy a photo from the theme's `assets/` into the carousel's `assets/`, or download a better-matched photo from Unsplash (free Unsplash License only, never Unsplash+), resized to the size it is shown at (about 1080 × 1350 for a cover, 1200 × 700 for a split; under ~350 KB). Every stock photo gets a row in `carousels/<slug>/assets/CREDITS.md` (file, photographer, Unsplash URL).
 - Render photos through the theme's `Photo` component so they are tinted to the palette. Never put body text directly on a photo: use `PhotoBackdrop` (it fades to `bg` under the text) or put the text below the photo.
 - Stock photos set a mood; they are never evidence. No stand-in screenshots, fake product shots, or strangers presented as customers or the author. If a slide needs a real screenshot or portrait, ask the user for the file.
-- **Icons**: `lucide-react`, imported by name (`import { Target, type LucideIcon } from 'lucide-react'`), sized in px (`className="size-[88px]"`) and coloured with a token. Import only the icons you use.
+- **Choosing and sourcing visuals**: how to pick photos (search terms, metaphors over clichés, selection criteria), how to get them from Unsplash (an Unsplash tool if one is available, then the API, then plain URLs) and which icon fits which idea are covered in [`../../poster/references/imagery.md`](../../poster/references/imagery.md). Read it before adding any photo or icon.
+- **Icons**: `@solar-icons/react` (six styles, imported per style: `import { TargetIcon } from '@solar-icons/react/linear'` → `<TargetIcon size={88} color="var(--cx-accent)" />`; duotone styles also take `secondaryColor`) or `lucide-react` (`import { Target, type LucideIcon } from 'lucide-react'`, sized with `className="size-[88px]"`). If the theme's recipes use Lucide, keep Lucide. **One family and one style per carousel.** Never mix Solar and Lucide, or two Solar styles. Size in px, colour with a token, import only the icons you use. When Solar is used, add `Icons: [Solar](https://github.com/480-Design/Solar-Icon-Set) by 480 Design, CC BY 4.0.` to `assets/CREDITS.md`.
 
 ## Self-review checklist
 

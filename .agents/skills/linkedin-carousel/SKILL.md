@@ -1,6 +1,6 @@
 ---
 name: linkedin-carousel
-description: Use this skill when the user wants to create, draft, generate or edit a LinkedIn carousel (a multi-slide LinkedIn document post) in this poster-builder repo. Triggers on phrases like "create a post", "make a LinkedIn post", "new carousel", "make a LinkedIn carousel about X", "carousel post", "turn this post / article / thread into a carousel", "add a slide to the <name> carousel", or any edit under `src/linkedin-carousels/carousels/`. Do NOT use for creating themes (use `linkedin-carousel-theme`) or for changing the studio, export or engine code.
+description: Use this skill when the user wants to create, draft, generate or edit a LinkedIn carousel (a multi-slide LinkedIn document post) in this poster-builder repo. Triggers on phrases like "create a post", "make a LinkedIn post", "new carousel", "make a LinkedIn carousel about X", "carousel post", "turn this post / article / thread into a carousel", "add a slide to the <name> carousel", or any edit under `src/linkedin-carousels/carousels/`. Do NOT use for single-image posters or graphics (use `poster`), for creating themes (use `linkedin-carousel-theme`) or for changing the studio, export or engine code.
 ---
 
 # Create a LinkedIn carousel
