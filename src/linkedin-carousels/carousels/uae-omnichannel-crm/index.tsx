@@ -1,22 +1,14 @@
 // Theme: condensed-impact
 
 import { cn } from 'cn'
-import {
-  ArrowRight,
-  Camera,
-  Check,
-  Globe,
-  Inbox,
-  Mail,
-  MessageCircle,
-  Phone,
-  X,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowRight, Check, Globe, Inbox, Phone, X, type LucideIcon } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
 import dubaiPhoto from './assets/dubai.jpg'
+import gmailLogo from './assets/logos/gmail.svg'
+import instagramLogo from './assets/logos/instagram.svg'
+import whatsappLogo from './assets/logos/whatsapp.svg'
 import phonePhoto from './assets/phone.jpg'
 
 const TOKENS = {
@@ -182,48 +174,67 @@ function CompareColumn({ kind, items }: { kind: 'dont' | 'do'; items: string[] }
   )
 }
 
-const CHANNELS: { icon: LucideIcon; label: string }[] = [
-  { icon: MessageCircle, label: 'WhatsApp' },
-  { icon: Camera, label: 'Instagram' },
-  { icon: Mail, label: 'Email' },
-  { icon: Phone, label: 'Calls' },
-  { icon: Globe, label: 'Web chat' },
+const CHANNELS: { label: string; logo?: string; icon?: LucideIcon }[] = [
+  { label: 'WhatsApp', logo: whatsappLogo },
+  { label: 'Instagram', logo: instagramLogo },
+  { label: 'Email', logo: gmailLogo },
+  { label: 'Calls', icon: Phone },
+  { label: 'Web chat', icon: Globe },
 ]
 
-function ChannelChip({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function ChannelTile({ label, logo, icon: Icon }: (typeof CHANNELS)[number]) {
   return (
-    <div className="flex flex-col items-center gap-[20px] rounded-[24px] bg-(--cx-surface) px-[12px] py-[36px]">
-      <Icon className="size-[72px]" strokeWidth={2} />
+    <div className="flex flex-col items-center gap-[16px]">
+      <span className="flex size-[112px] items-center justify-center rounded-[28px] bg-(--cx-fg) text-(--cx-bg)">
+        {logo ? (
+          <img src={logo} alt="" width={64} height={64} className="size-[64px]" />
+        ) : (
+          Icon && <Icon className="size-[56px]" strokeWidth={2.25} />
+        )}
+      </span>
       <p className="text-[26px] leading-[1.2] font-bold">{label}</p>
     </div>
   )
 }
 
+/** Tile centres on the 888 px, 5-column, 20 px-gap grid. */
+const TILE_X = [80.8, 262.4, 444, 625.6, 807.2]
+const CURVE_H = 220
+
 /**
- * The merge illustration: five channel chips drop into one rail, then a single
- * accent line carries them into the unified inbox. Column centres are the exact
- * 888 px / 5-grid centres (≈ 81 px and 807 px), so the rail meets every drop.
+ * The merge illustration: five channel tiles, each feeding a bezier curve that
+ * bends into the centre and lands on the single inbox below.
  */
 function MergeDiagram() {
   return (
     <div className="flex flex-col">
       <div className="grid grid-cols-5 gap-[20px]">
-        {CHANNELS.map(({ icon, label }) => (
-          <ChannelChip key={label} icon={icon} label={label} />
+        {CHANNELS.map((channel) => (
+          <ChannelTile key={channel.label} {...channel} />
         ))}
       </div>
-      <div className="relative h-[220px]">
-        <div className="absolute inset-x-0 top-0 grid grid-cols-5 gap-[20px]">
-          {CHANNELS.map(({ label }) => (
-            <span key={label} className="mx-auto h-[140px] w-[4px] bg-(--cx-rule)" />
-          ))}
-        </div>
-        <span className="absolute inset-x-[81px] top-[140px] h-[4px] bg-(--cx-rule)" />
-        <span className="absolute top-[140px] left-1/2 h-[80px] w-[4px] -translate-x-1/2 bg-(--cx-fg)" />
-      </div>
+      <svg
+        viewBox={`0 0 888 ${CURVE_H}`}
+        className="h-[220px] w-full fill-none stroke-(--cx-fg)"
+        aria-hidden
+      >
+        {TILE_X.map((x) => (
+          <path
+            key={x}
+            d={`M ${x} 16 C ${x} ${CURVE_H * 0.62}, 444 ${CURVE_H * 0.38}, 444 ${CURVE_H}`}
+            strokeWidth={4}
+            strokeLinecap="round"
+          />
+        ))}
+        {TILE_X.map((x) => (
+          <circle key={x} cx={x} cy={16} r={8} className="fill-(--cx-fg)" />
+        ))}
+      </svg>
       <div className="flex items-center justify-center gap-[28px] rounded-[24px] bg-(--cx-accent) px-[40px] py-[36px] text-(--cx-on-accent)">
         <Inbox className="size-[64px]" strokeWidth={2.25} />
-        <p className="text-[44px] leading-[1.3] font-bold">All channels, one inbox</p>
+        <p className="font-(family-name:--cx-font-display) text-[56px] leading-[1.1] font-bold uppercase">
+          One inbox
+        </p>
       </div>
     </div>
   )
@@ -254,7 +265,7 @@ function Channels() {
         <div className="flex flex-col gap-[40px]">
           <Point n="1">WhatsApp, day and night</Point>
           <Point n="2">Instagram DMs and comments</Point>
-          <Point n="3">Calls to the showroom</Point>
+          <Point n="3">Calls to your sales line</Point>
           <Point n="4">Emails from the website</Point>
         </div>
       </div>
@@ -274,11 +285,11 @@ function TheCost() {
         <div className="grid grid-cols-2 gap-[24px]">
           <CompareColumn
             kind="dont"
-            items={['Repeat your story', 'Follow-ups slip', 'No clear owner']}
+            items={['Make them repeat', 'Chase leads from memory', 'Leave leads unowned']}
           />
           <CompareColumn
             kind="do"
-            items={['One shared timeline', 'Auto follow-ups', 'One clear owner']}
+            items={['One shared timeline', 'Automatic reminders', 'An owner per lead']}
           />
         </div>
       </div>
@@ -299,7 +310,7 @@ function OnePlace() {
         <div className="flex flex-col gap-[32px]">
           <Eyebrow>The shift</Eyebrow>
           <Title>One place for it all</Title>
-          <Body>Every channel into one customer story.</Body>
+          <Body>Every channel feeds one customer story.</Body>
         </div>
       </div>
       <Footer page={4} total={TOTAL} />
@@ -354,7 +365,7 @@ function NeverMiss() {
         <div className="flex flex-col gap-[32px]">
           <Eyebrow>Never miss</Eyebrow>
           <Title>No message left behind</Title>
-          <Body>Every channel lands on one timeline.</Body>
+          <Body>Every lead gets an owner and a reminder.</Body>
         </div>
       </div>
       <Footer page={7} total={TOTAL} />
@@ -374,7 +385,7 @@ function Recap() {
           <Point n="1">One inbox for every channel</Point>
           <Point n="2">One record per customer</Point>
           <Point n="3">One AI that sees it all</Point>
-          <Point n="4">One team, zero missed</Point>
+          <Point n="4">One team, nothing missed</Point>
         </div>
       </div>
       <Footer page={8} total={TOTAL} />
