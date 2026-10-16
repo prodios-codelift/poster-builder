@@ -23,7 +23,7 @@ const TOKENS = { /* … */ } as CSSProperties
 const AUTHOR = { name: 'Ada Lovelace', handle: '@ada' }
 
 function Frame({ children, className }: { children: ReactNode; className?: string }) {
-  /* LinkedInCarouselSlide > div style={TOKENS} … */
+  /* <LinkedInCarouselSlide tokens={TOKENS}> > div … */
 }
 
 function Cover() {
@@ -65,7 +65,7 @@ function HardestTickets() {
 
 ## Tokens and styling
 
-Theme values live in CSS variables set on the `Frame`'s inner div and read with Tailwind v4 variable syntax. This keeps every colour and font in one place at the top of the file.
+Theme values live in CSS variables passed to `LinkedInCarouselSlide` through its `tokens` prop (it sets them on the slide root) and read with Tailwind v4 variable syntax. This keeps every colour and font in one place at the top of the file, and lets the studio swap palettes when previewing theme variants.
 
 ```tsx
 const TOKENS = {
@@ -80,9 +80,8 @@ const TOKENS = {
 
 function Frame({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <LinkedInCarouselSlide>
+    <LinkedInCarouselSlide tokens={TOKENS}>
       <div
-        style={TOKENS}
         className={cn(
           'flex size-full flex-col bg-(--cx-bg) px-[96px] pt-[112px] pb-[72px] font-(family-name:--cx-font-body) text-(--cx-fg)',
           className,
@@ -96,6 +95,7 @@ function Frame({ children, className }: { children: ReactNode; className?: strin
 ```
 
 - Colours: `bg-(--cx-bg)`, `text-(--cx-accent)`, `border-(--cx-rule)`. Fonts: `font-(family-name:--cx-font-display)`.
+- Pass `TOKENS` only through `tokens={TOKENS}`; never put `style={TOKENS}` on an inner element (it would block palette previews).
 - Minimum token set: `bg`, `fg`, `accent`, `muted`, `font-display`, `font-body`. Add more (`--cx-rule`, `--cx-surface`, …) as needed; never hardcode a hex inside a slide.
 - A slide that needs a different background (e.g. an inverted CTA) passes `className="bg-(--cx-fg) text-(--cx-bg)"` to `Frame`.
 - Sizes and spacing: **explicit pixels** via arbitrary values — `text-[44px] leading-[1.4]`, `gap-[48px]`, `px-[96px]`. Give **every** text element an explicit `leading-[…]` so the budget math below is exact.
@@ -113,9 +113,14 @@ Fonts must already be loaded globally or they won't appear in the preview or the
 | Fraunces (serif display) | 500, 700 | `'Fraunces', Georgia, serif` | 0.42 (500, tight tracking) · 0.46 (700) |
 | Manrope (sans) | 400–800 | `'Manrope', system-ui, sans-serif` | 0.50 (500–600) · 0.54 (700–800) |
 | Geist Variable (sans) | 100–900 | `'Geist Variable', system-ui, sans-serif` | 0.50 (500–600) · 0.54 (700+) |
+| Inter Tight (sans) | 500, 700, 800 | `'Inter Tight', system-ui, sans-serif` | 0.48 (800, tight tracking) · 0.50 (500–700) |
+| Space Grotesk (sans) | 500, 700 | `'Space Grotesk', system-ui, sans-serif` | 0.55 |
+| JetBrains Mono (mono) | 400, 700 | `'JetBrains Mono', ui-monospace, monospace` | 0.60 |
+| Instrument Serif (serif display) | 400 + italic | `'Instrument Serif', Georgia, serif` | 0.40 |
+| Caveat (handwriting, accents only) | 600 | `'Caveat', 'Comic Sans MS', cursive` | 0.38 — never below 44 px |
 | System stacks | — | `system-ui, sans-serif` · `Georgia, serif` · `ui-monospace, monospace` | 0.52 · 0.48 · 0.60 |
 
-The width factor is the average character width as a fraction of font size; use it in the line estimate below. Use only weights that are loaded (Fraunces has no 600/800 — the browser would fake-bold it). One display font + one body font per carousel. Need a family that isn't listed? Ask the user to add it with a theme (`linkedin-carousel-theme`) — don't edit `styles.css` from this skill.
+The width factor is the average character width as a fraction of font size; use it in the line estimate below. Use only weights that are loaded (Fraunces has no 600/800 and Instrument Serif has no bold — the browser would fake-bold them). One display font + one body font per carousel, plus an accent hand font only when the theme defines one. Need a family that isn't listed? Ask the user to add it with a theme (`linkedin-carousel-theme`) — don't edit `styles.css` from this skill.
 
 ## Canvas
 
@@ -197,8 +202,10 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - Put images in `carousels/<slug>/assets/` and import them: `import portrait from './assets/portrait.jpg'` → `<img src={portrait} … />`. Same-origin imports are inlined by the exporter.
 - **Never hotlink remote image URLs** — cross-origin images break or blank the export.
 - Give every `<img>` explicit pixel `width`/`height` (or a sized wrapper) and `object-cover` so layout doesn't shift.
-- If a slide genuinely needs a photo or screenshot the user must supply, ask for the file. Don't invent stand-ins or decorative stock imagery; type, colour and layout should carry the slide.
-- Icons: `lucide-react`, sized in px (`className="size-[56px]"`), stroked with a token colour.
+- **Stock photos** are allowed when the theme's photo slides (`PhotoCover`, `ImageSplit`) fit the topic. Copy a photo from the theme's `assets/` into the carousel's `assets/`, or download a better-matched photo from Unsplash (free Unsplash License only, never Unsplash+), resized to the size it is shown at (about 1080 × 1350 for a cover, 1200 × 700 for a split; under ~350 KB). Every stock photo gets a row in `carousels/<slug>/assets/CREDITS.md` (file, photographer, Unsplash URL).
+- Render photos through the theme's `Photo` component so they are tinted to the palette. Never put body text directly on a photo: use `PhotoBackdrop` (it fades to `bg` under the text) or put the text below the photo.
+- Stock photos set a mood; they are never evidence. No stand-in screenshots, fake product shots, or strangers presented as customers or the author. If a slide needs a real screenshot or portrait, ask the user for the file.
+- **Icons**: `lucide-react`, imported by name (`import { Target, type LucideIcon } from 'lucide-react'`), sized in px (`className="size-[88px]"`) and coloured with a token. Import only the icons you use.
 
 ## Self-review checklist
 
@@ -213,6 +220,7 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - [ ] Accent kept to ≤ 2 roles per slide; contrast passes.
 - [ ] No invented statistics, quotes or anecdotes.
 - [ ] Imported assets exist on disk; no remote image URLs; no animation classes.
+- [ ] Every stock photo has a `CREDITS.md` row, is shown through the theme's `Photo`, and no text sits on an untinted photo.
 - [ ] Theme carousels start with `// Theme: <id>` and use the theme's components verbatim.
 - [ ] `registry.ts` has the import + entry as the last real carousel, above `// Theme demos`; `id` = slug.
 - [ ] `vp check` passes.
@@ -224,6 +232,7 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - ❌ Text hugging the edges, or anything below 26 px.
 - ❌ Half-empty top-aligned slides at light density — centre them.
 - ❌ Thin weights, low-contrast grey body copy, text over busy photos.
+- ❌ Stock photos used as proof, or photos without a `CREDITS.md` row.
 - ❌ More than two font families, or a second accent colour.
 - ❌ Made-up numbers, quotes or "when I was…" stories.
 - ❌ Hardcoded page totals that went stale after a reorder.

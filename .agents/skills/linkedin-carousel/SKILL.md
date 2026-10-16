@@ -11,9 +11,11 @@ A carousel is one file, `src/linkedin-carousels/carousels/<slug>/index.tsx` (plu
 
 ## Step 1 — Pick a theme
 
-List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio as `Theme · <Name>`).
+List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio once per palette as `Theme · <Name> · <Palette>`). The frontmatter `description` and `mode` of each `theme.md` are enough to shortlist.
 
-If any themes exist, call `AskUserQuestion` with the theme ids as options plus a final **"No theme — design from scratch"**. With 4+ themes, offer the 3 most relevant to the topic; the auto-added "Other" covers the rest. Skip the question if the user already named a theme.
+If any themes exist, call `AskUserQuestion` with the theme ids as options plus a final **"No theme — design from scratch"**. With 4+ themes, offer the 3 most relevant to the topic and tone (professional, dark/techy, colourful/playful); the auto-added "Other" covers the rest. Skip the question if the user already named a theme.
+
+Each theme lists **palette variants** in its `## Palette variants` section. Use the default unless the user names a palette or brand colours; if they ask for a different look, offer the variants (same question, or a follow-up) rather than inventing colours.
 
 - **Theme picked**: read `themes/<id>/theme.md` end to end. Its palette, tokens, typography, layout and fixed components are authoritative — paste them into the carousel verbatim. Do **not** import from the theme folder; carousels are self-contained copies so later theme edits never change a published carousel. Skip the aesthetic question in Step 2 and restate the theme name so the user can correct course.
 - **No theme**: design from scratch in Step 2, following the token pattern in `references/authoring.md`.
@@ -50,18 +52,21 @@ Before any JSX, draft the full text of every slide as a numbered outline with a 
 
 Example fits: 8 slides with 5 points → Hook + Context + 5 points + CTA. 7 slides with 4 points → Hook + 4 points + Recap + CTA.
 
+**Pick a slide type per role.** Every theme's `theme.md` has a **Slide recipes** section: `PhotoCover` (alternate cover), `ImageSplit` (photo + idea), `IconGrid` (four parallel ideas), `QuoteSlide`, `StatSlide`, `Compare` (don't/do), `Steps` (timeline), plus the basic list `Content` slide. Note the type next to each outline row. Vary the rhythm so no more than two slides in a row share a layout. For example, a photo break after every three or four text slides, a `Compare` for a mistake → fix point, `Steps` for a process, `IconGrid` for four parallel tips. `QuoteSlide` and `StatSlide` are only for real quotes and numbers from the user (the same rule as Example / proof). Photos are optional: use them when one fits the topic, following *Assets* in `references/authoring.md`.
+
 Check the budgets now, while it is cheap: hook ≤ 8 words, slide title ≤ ~8 words, body within the density limit, list items fit one line (use the line estimate in `references/authoring.md`). If a slide holds two ideas, split it. Show the outline to the user only if they asked to review it or the brief was ambiguous; otherwise proceed, and list your content choices in the hand-off.
 
 ## Step 5 — Write `carousels/<slug>/index.tsx`
 
 Follow `references/authoring.md`. With a theme:
 
-1. Start the file with `// Theme: <id>`.
-2. Paste the theme's imports, `TOKENS`, `AUTHOR` and `Frame`, then **only the fixed components you use** (unused ones fail `vp check`). Fill in `AUTHOR`.
+1. Start the file with `// Theme: <id>` (or `// Theme: <id> · <palette-key>` for a non-default palette).
+2. Paste the theme's imports, `TOKENS`, `AUTHOR` and `Frame`, then **only the fixed components you use** (unused ones fail `vp check`). Fill in `AUTHOR`. For a non-default palette, replace the colour lines in `TOKENS` with that variant's block from `## Palette variants`, keeping the font lines. Never copy `PALETTES`.
 3. The theme's `theme.md` is the only source to copy from; its demo `index.tsx` contains the same code, so never import it.
-4. If the carousel needs a piece the theme doesn't define, compose it from the theme's tokens, type scale and components, inside the theme's accent and caps rules.
-5. When several slides share a layout, use a slide template (see *Slide templates* in `references/authoring.md`).
-6. Write one named function per slide and end with `export const slides = [...]` in order.
+4. For each slide type in the outline, start from that theme's slide recipe and change only the copy and footer numbers. When you use photos or icons, follow the theme's **Images and icons** section: copy the photo into the carousel's `assets/` with a `CREDITS.md` row, and import only the icons you use.
+5. If the carousel needs a piece the theme doesn't define, compose it from the theme's tokens, type scale and components, inside the theme's accent and caps rules.
+6. When several slides share a layout, use a slide template (see *Slide templates* in `references/authoring.md`).
+7. Write one named function per slide and end with `export const slides = [...]` in order.
 
 Do the vertical-budget math for every slide before writing it, and apply the density alignment rule consistently.
 
