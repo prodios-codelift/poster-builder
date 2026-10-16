@@ -8,7 +8,7 @@ description: Use this skill when the user wants to create, draft or extract a re
 A theme is a **bundle of two files plus an `assets/` folder** in `src/linkedin-carousels/themes/<id>/`:
 
 1. `theme.md` — agent-facing recipe: palette, tokens, typography, layout, paste-ready components, aesthetic. The `linkedin-carousel` skill reads this and **copies** from it into each new carousel.
-2. `index.tsx` — a runnable 3-slide demo that uses exactly those components, plus a `PALETTES` export with the theme's colour variants. It's registered in the studio once per palette as `Theme · <Name> · <Palette>` so the user can preview and export each like a carousel.
+2. `index.tsx` — a runnable 3-slide demo that uses exactly those components, plus a `PALETTES` export with the theme's colour variants. It's registered in the studio Themes tab once per palette as `<Name> · <Palette>` so the user can preview and export each like a carousel.
 
 Carousels never import a theme; they paste its snippets. So the markdown snippets and the demo code must be **identical** — the demo is the proof the snippets compile and look right.
 
@@ -34,7 +34,7 @@ Kebab-case, short, descriptive: `paper-editorial`, `midnight-mono`, `lemon-check
 
 Fonts must be globally loaded to show in preview and export. Already available: **Fraunces** (500, 700), **Manrope** (400–800), **Geist Variable** (100–900), plus system stacks (see the Fonts table in `authoring.md`).
 
-Also loaded: **Inter Tight** (500, 700, 800), **Space Grotesk** (500, 700), **JetBrains Mono** (400, 700), **Instrument Serif** (400 + italic), **Caveat** (600). Prefer these. If the theme genuinely needs another Google Font (e.g. brand font), add its `family=` segment to the existing Google Fonts `@import url(...)` on line 1 of `src/styles.css` — one combined URL, only the weights you'll use. Record exactly which weights are loaded in `theme.md`.
+Also loaded: **Inter Tight** (500, 700, 800), **Space Grotesk** (500, 700), **JetBrains Mono** (400, 700), **Instrument Serif** (400 + italic), **Caveat** (600), **Oswald** (500, 700). Prefer these. If the theme genuinely needs another Google Font (e.g. brand font), add its `family=` segment to the existing Google Fonts `@import url(...)` on line 1 of `src/styles.css` — one combined URL, only the weights you'll use. Record exactly which weights are loaded in `theme.md`.
 
 ## Step 4 — Write `themes/<id>/index.tsx` (demo)
 
@@ -124,12 +124,15 @@ One paragraph: the feel, the references, the discipline, and an explicit avoid-l
 
 ## Step 6 — Register the demo
 
-In `src/linkedin-carousels/registry.ts`, add a namespace import (kept alphabetical with the other theme imports) and one `themeEntries` line inside the `// Theme demos` block (below all real carousels). It creates one studio entry per palette, `theme-<id>--<palette-key>`:
+In `src/linkedin-carousels/registry.ts`, add a namespace import (kept alphabetical with the other theme imports) and one `themeEntries` line in the `themes` array. Do **not** add it to `carousels`. It creates one Themes-tab entry per palette, `theme-<id>--<palette-key>`, named `<Name> · <Palette>`:
 
 ```ts
 import * as midnightMonoTheme from './themes/midnight-mono'
 
+export const themes: LinkedInCarousel[] = [
+  // …
   ...themeEntries('midnight-mono', 'Midnight Mono', midnightMonoTheme),
+]
 ```
 
 ## Step 7 — Self-review
@@ -147,14 +150,14 @@ import * as midnightMonoTheme from './themes/midnight-mono'
 - [ ] `assets/cover.jpg` and `assets/split.jpg` exist, are free-license Unsplash photos, and are listed in `assets/CREDITS.md`; the tint visibly changes with each palette.
 - [ ] Text over a `PhotoBackdrop` sits on the faded part and passes 4.5:1 against `bg`.
 - [ ] Aesthetic commits to one direction and lists what to avoid.
-- [ ] `themeEntries('<id>', …)` added under `// Theme demos`.
+- [ ] `themeEntries('<id>', …)` added to the `themes` array.
 - [ ] `vp check` passes.
 
-If the dev server is running and you have a browser tool, open `/linkedin-carousel`, select each `Theme · <Name> · <Palette>` entry and check all three slides.
+If the dev server is running and you have a browser tool, open `/linkedin-carousel`, open the **Themes** tab, select each `<Name> · <Palette>` entry and check all ten slides.
 
 ## Step 8 — Hand off
 
-Tell the user the theme id and both paths, a one-line summary of the look, that it's previewable in the studio as `Theme · <Name> · <Palette>` (one entry per variant), and that `linkedin-carousel` will offer it on the next carousel request. Mention any font you added to `styles.css`.
+Tell the user the theme id and both paths, a one-line summary of the look, that it's previewable under Themes as `<Name> · <Palette>` (one entry per variant), and that `linkedin-carousel` will offer it on the next carousel request. Mention any font you added to `styles.css`.
 
 ## Anti-patterns
 

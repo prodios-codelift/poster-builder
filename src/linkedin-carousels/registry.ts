@@ -4,6 +4,7 @@ import * as auroraGlowTheme from './themes/aurora-glow'
 import * as bentoPopTheme from './themes/bento-pop'
 import * as boardroomNavyTheme from './themes/boardroom-navy'
 import * as boldDuotoneTheme from './themes/bold-duotone'
+import * as condensedImpactTheme from './themes/condensed-impact'
 import * as dataBriefTheme from './themes/data-brief'
 import * as highlighterNotesTheme from './themes/highlighter-notes'
 import * as midnightTerminalTheme from './themes/midnight-terminal'
@@ -23,13 +24,16 @@ type ThemeDemo = { slides: FC[]; PALETTES: Record<string, ThemePalette> }
 function themeEntries(id: string, name: string, theme: ThemeDemo): LinkedInCarousel[] {
   return Object.entries(theme.PALETTES).map(([key, palette]) => ({
     id: `theme-${id}--${key}`,
-    name: `Theme · ${name} · ${palette.name}`,
+    name: `${name} · ${palette.name}`,
     slides: withPalette(theme.slides, palette.tokens),
   }))
 }
 
-export const carousels: LinkedInCarousel[] = [
-  // Theme demos
+/** User-created carousels shown under My posts. */
+export const carousels: LinkedInCarousel[] = []
+
+/** Built-in theme demos shown under Themes. */
+export const themes: LinkedInCarousel[] = [
   ...themeEntries('paper-editorial', 'Paper Editorial', paperEditorialTheme),
   ...themeEntries('boardroom-navy', 'Boardroom Navy', boardroomNavyTheme),
   ...themeEntries('swiss-grid', 'Swiss Grid', swissGridTheme),
@@ -41,4 +45,5 @@ export const carousels: LinkedInCarousel[] = [
   ...themeEntries('bold-duotone', 'Bold Duotone', boldDuotoneTheme),
   ...themeEntries('bento-pop', 'Bento Pop', bentoPopTheme),
   ...themeEntries('highlighter-notes', 'Highlighter Notes', highlighterNotesTheme),
+  ...themeEntries('condensed-impact', 'Condensed Impact', condensedImpactTheme),
 ]

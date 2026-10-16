@@ -11,7 +11,7 @@ A carousel is one file, `src/linkedin-carousels/carousels/<slug>/index.tsx` (plu
 
 ## Step 1 — Pick a theme
 
-List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio once per palette as `Theme · <Name> · <Palette>`). The frontmatter `description` and `mode` of each `theme.md` are enough to shortlist.
+List the folders under `src/linkedin-carousels/themes/`. Each has a `theme.md` (the recipe) and an `index.tsx` (a demo, visible in the studio Themes tab once per palette as `<Name> · <Palette>`). The frontmatter `description` and `mode` of each `theme.md` are enough to shortlist.
 
 If any themes exist, call `AskUserQuestion` with the theme ids as options plus a final **"No theme — design from scratch"**. With 4+ themes, offer the 3 most relevant to the topic and tone (professional, dark/techy, colourful/playful); the auto-added "Other" covers the rest. Skip the question if the user already named a theme.
 
@@ -72,25 +72,28 @@ Do the vertical-budget math for every slide before writing it, and apply the den
 
 ## Step 6 — Register it
 
-In `src/linkedin-carousels/registry.ts`, add an import (after the existing carousel imports) and an entry as the **last real carousel**, directly above the `// Theme demos` block:
+In `src/linkedin-carousels/registry.ts`, add an import (after the existing carousel imports) and an entry at the end of the `carousels` array (My posts). Do **not** add it to `themes`.
 
 ```ts
 import { slides as firstEngineerHireSlides } from './carousels/first-engineer-hire'
 
+export const carousels: LinkedInCarousel[] = [
+  // …
   {
     id: 'first-engineer-hire',
     name: 'Hiring your first engineer',
     slides: firstEngineerHireSlides,
   },
+]
 ```
 
-`name` is a plain, descriptive title for the whole carousel (not necessarily the cover hook). It is shown in the studio sidebar, becomes the exported PDF/PNG filename, and is what you suggest as the LinkedIn document title in Step 8.
+`name` is a plain, descriptive title for the whole carousel (not necessarily the cover hook). It is shown under My posts in the studio sidebar, becomes the exported PDF/PNG filename, and is what you suggest as the LinkedIn document title in Step 8.
 
 ## Step 7 — Self-review
 
 Run the checklist at the end of `references/authoring.md`, then run `vp check` from the repo root and fix every error.
 
-If the dev server is running (`vp run dev`, port 3000) and you have a browser tool, open `http://localhost:3000/linkedin-carousel`, click the carousel in the sidebar and step through every slide with the arrows; fix anything clipped, wrapped badly, low-contrast or half-empty. Don't start the dev server unless the user asked.
+If the dev server is running (`vp run dev`, port 3000) and you have a browser tool, open `http://localhost:3000/linkedin-carousel`, open the **My posts** tab, click the carousel in the sidebar and step through every slide with the arrows; fix anything clipped, wrapped badly, low-contrast or half-empty. Don't start the dev server unless the user asked.
 
 No browser tool? Rely on the budget math with its 10% slack rule, and tell the user in the hand-off that you haven't checked it visually.
 

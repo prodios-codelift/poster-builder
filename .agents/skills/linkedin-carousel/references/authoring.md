@@ -118,6 +118,7 @@ Fonts must already be loaded globally or they won't appear in the preview or the
 | JetBrains Mono (mono) | 400, 700 | `'JetBrains Mono', ui-monospace, monospace` | 0.60 |
 | Instrument Serif (serif display) | 400 + italic | `'Instrument Serif', Georgia, serif` | 0.40 |
 | Caveat (handwriting, accents only) | 600 | `'Caveat', 'Comic Sans MS', cursive` | 0.38 — never below 44 px |
+| Oswald (condensed display, caps) | 500, 700 | `'Oswald', 'Arial Narrow', sans-serif` | 0.40 (uppercase, 700) |
 | System stacks | — | `system-ui, sans-serif` · `Georgia, serif` · `ui-monospace, monospace` | 0.52 · 0.48 · 0.60 |
 
 The width factor is the average character width as a fraction of font size; use it in the line estimate below. Use only weights that are loaded (Fraunces has no 600/800 and Instrument Serif has no bold — the browser would fake-bold them). One display font + one body font per carousel, plus an accent hand font only when the theme defines one. Need a family that isn't listed? Ask the user to add it with a theme (`linkedin-carousel-theme`) — don't edit `styles.css` from this skill.
@@ -222,7 +223,7 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - [ ] Imported assets exist on disk; no remote image URLs; no animation classes.
 - [ ] Every stock photo has a `CREDITS.md` row, is shown through the theme's `Photo`, and no text sits on an untinted photo.
 - [ ] Theme carousels start with `// Theme: <id>` and use the theme's components verbatim.
-- [ ] `registry.ts` has the import + entry as the last real carousel, above `// Theme demos`; `id` = slug.
+- [ ] `registry.ts` has the import + entry in the `carousels` array (My posts); `id` = slug.
 - [ ] `vp check` passes.
 - [ ] Nothing else edited.
 
