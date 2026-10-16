@@ -10,16 +10,16 @@ mode: dark
 
 One saturated colour floods every slide, white carries the type, and a single warm accent does the shouting. The accent fills the eyebrow tag and appears on at most one more device per slide (list numerals, the swipe arrow, step badges, the stat). Text on the accent always uses `on-accent`.
 
-| Role      | Value                       | Notes                                                    |
-| --------- | --------------------------- | -------------------------------------------------------- |
-| bg        | `#3B1FA8`                   | ultraviolet page, every slide                            |
-| fg        | `#FFFFFF`                   | headlines and list items (≈ 10:1 on bg)                  |
-| accent    | `#FFD23F`                   | tag pill fill, numerals, step badges, stat               |
-| muted     | `#D4CCF5`                   | body copy, footer, captions (≈ 7:1 on bg)                |
-| on-accent | `#1A0F4D`                   | text on accent fills (≈ 12:1 on accent)                  |
-| rule      | `rgba(255, 255, 255, 0.22)` | list hairlines, step connector, outlined compare column  |
-| surface   | `rgba(255, 255, 255, 0.09)` | icon cards, the "do" compare column                      |
-| ring      | `rgba(255, 255, 255, 0.13)` | concentric rings in the top-right corner                 |
+| Role      | Value                       | Notes                                                   |
+| --------- | --------------------------- | ------------------------------------------------------- |
+| bg        | `#3B1FA8`                   | ultraviolet page, every slide                           |
+| fg        | `#FFFFFF`                   | headlines and list items (≈ 10:1 on bg)                 |
+| accent    | `#FFD23F`                   | tag pill fill, numerals, step badges, stat              |
+| muted     | `#D4CCF5`                   | body copy, footer, captions (≈ 7:1 on bg)               |
+| on-accent | `#1A0F4D`                   | text on accent fills (≈ 12:1 on accent)                 |
+| rule      | `rgba(255, 255, 255, 0.22)` | list hairlines, step connector, outlined compare column |
+| surface   | `rgba(255, 255, 255, 0.09)` | icon cards, the "do" compare column                     |
+| ring      | `rgba(255, 255, 255, 0.13)` | concentric rings in the top-right corner                |
 
 ## Palette variants
 

@@ -1,0 +1,409 @@
+// Theme: condensed-impact
+
+import { cn } from 'cn'
+import {
+  ArrowRight,
+  Camera,
+  Check,
+  Globe,
+  Inbox,
+  Mail,
+  MessageCircle,
+  Phone,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
+import type { CSSProperties, ReactNode } from 'react'
+
+import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import dubaiPhoto from './assets/dubai.jpg'
+import phonePhoto from './assets/phone.jpg'
+
+const TOKENS = {
+  '--cx-bg': '#3B1FA8',
+  '--cx-fg': '#FFFFFF',
+  '--cx-accent': '#FFD23F',
+  '--cx-muted': '#D4CCF5',
+  '--cx-on-accent': '#1A0F4D',
+  '--cx-rule': 'rgba(255, 255, 255, 0.22)',
+  '--cx-surface': 'rgba(255, 255, 255, 0.09)',
+  '--cx-ring': 'rgba(255, 255, 255, 0.13)',
+  '--cx-font-display': "'Oswald', 'Arial Narrow', sans-serif",
+  '--cx-font-body': "'Manrope', system-ui, sans-serif",
+} as CSSProperties
+
+const AUTHOR = { name: 'Your Name', handle: '@yourhandle' }
+
+const TOTAL = 9
+
+function Frame({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <LinkedInCarouselSlide tokens={TOKENS}>
+      <div
+        className={cn(
+          'relative isolate flex size-full flex-col bg-(--cx-bg) px-[96px] pt-[112px] pb-[72px] font-(family-name:--cx-font-body) text-(--cx-fg)',
+          className,
+        )}
+      >
+        <Rings />
+        <div className="relative flex flex-1 flex-col">{children}</div>
+      </div>
+    </LinkedInCarouselSlide>
+  )
+}
+
+function Rings() {
+  return (
+    <div className="pointer-events-none absolute -top-[300px] -right-[300px] size-[760px] rounded-full bg-[repeating-radial-gradient(circle,transparent_0_44px,var(--cx-ring)_44px_50px)]" />
+  )
+}
+
+function Eyebrow({ children }: { children: ReactNode }) {
+  return (
+    <p className="self-start rounded-[8px] bg-(--cx-accent) px-[20px] py-[10px] text-[26px] leading-[1.2] font-extrabold tracking-[0.14em] text-(--cx-on-accent) uppercase">
+      {children}
+    </p>
+  )
+}
+
+function Hero({ children }: { children: ReactNode }) {
+  return (
+    <h1 className="font-(family-name:--cx-font-display) text-[150px] leading-[1.0] font-bold tracking-[-0.005em] uppercase">
+      {children}
+    </h1>
+  )
+}
+
+function Title({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="font-(family-name:--cx-font-display) text-[96px] leading-[1.05] font-bold uppercase">
+      {children}
+    </h2>
+  )
+}
+
+function Body({ children }: { children: ReactNode }) {
+  return <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)">{children}</p>
+}
+
+function Point({ n, children }: { n: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-[32px] border-t border-(--cx-rule) pt-[32px]">
+      <span className="w-[64px] shrink-0 font-(family-name:--cx-font-display) text-[64px] leading-none font-bold text-(--cx-accent)">
+        {n}
+      </span>
+      <p className="text-[42px] leading-[1.35] font-bold">{children}</p>
+    </div>
+  )
+}
+
+function SwipeCue() {
+  return (
+    <div className="flex items-center gap-[20px]">
+      <p className="text-[30px] leading-[1.3] font-bold tracking-[0.14em] uppercase">Swipe</p>
+      <span className="flex size-[64px] items-center justify-center rounded-full border-[3px] border-(--cx-accent) text-(--cx-accent)">
+        <ArrowRight className="size-[32px]" strokeWidth={2.5} />
+      </span>
+    </div>
+  )
+}
+
+function AuthorCard() {
+  const initials = AUTHOR.name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+  return (
+    <div className="flex items-center gap-[32px]">
+      <span className="flex size-[120px] shrink-0 items-center justify-center rounded-full bg-(--cx-accent) font-(family-name:--cx-font-display) text-[52px] leading-none font-bold text-(--cx-on-accent)">
+        {initials}
+      </span>
+      <div className="flex flex-col gap-[6px]">
+        <p className="font-(family-name:--cx-font-display) text-[56px] leading-[1.1] font-bold uppercase">
+          {AUTHOR.name}
+        </p>
+        <p className="text-[32px] leading-[1.3] font-semibold text-(--cx-muted)">{AUTHOR.handle}</p>
+      </div>
+    </div>
+  )
+}
+
+function Footer({ page, total }: { page: number; total: number }) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return (
+    <div className="mt-auto flex items-center justify-between text-[26px] leading-[1.3] font-bold text-(--cx-muted)">
+      <span>{AUTHOR.handle}</span>
+      <span className="font-(family-name:--cx-font-display) tracking-[0.08em] tabular-nums">
+        {pad(page)} / {pad(total)}
+      </span>
+    </div>
+  )
+}
+
+function Photo({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return (
+    <div className={cn('relative isolate overflow-hidden', className)}>
+      <img src={src} alt={alt} className="size-full object-cover grayscale contrast-[1.25]" />
+      <div className="absolute inset-0 bg-(--cx-bg) mix-blend-screen" />
+    </div>
+  )
+}
+
+function CompareColumn({ kind, items }: { kind: 'dont' | 'do'; items: string[] }) {
+  const Icon = kind === 'do' ? Check : X
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-[36px] rounded-[24px] p-[40px]',
+        kind === 'do' ? 'bg-(--cx-surface)' : 'border-[3px] border-(--cx-rule)',
+      )}
+    >
+      <p
+        className={cn(
+          'flex items-center gap-[12px] font-(family-name:--cx-font-display) text-[40px] leading-[1.1] font-bold uppercase',
+          kind === 'do' ? 'text-(--cx-accent)' : 'text-(--cx-muted)',
+        )}
+      >
+        <Icon className="size-[40px]" strokeWidth={3} />
+        {kind === 'do' ? 'Do' : "Don't"}
+      </p>
+      {items.map((item) => (
+        <p
+          key={item}
+          className={cn(
+            'text-[38px] leading-[1.35] font-bold',
+            kind === 'dont' && 'text-(--cx-muted)',
+          )}
+        >
+          {item}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+const CHANNELS: { icon: LucideIcon; label: string }[] = [
+  { icon: MessageCircle, label: 'WhatsApp' },
+  { icon: Camera, label: 'Instagram' },
+  { icon: Mail, label: 'Email' },
+  { icon: Phone, label: 'Calls' },
+  { icon: Globe, label: 'Web chat' },
+]
+
+function ChannelChip({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-[20px] rounded-[24px] bg-(--cx-surface) px-[12px] py-[36px]">
+      <Icon className="size-[72px]" strokeWidth={2} />
+      <p className="text-[26px] leading-[1.2] font-bold">{label}</p>
+    </div>
+  )
+}
+
+/**
+ * The merge illustration: five channel chips drop into one rail, then a single
+ * accent line carries them into the unified inbox. Column centres are the exact
+ * 888 px / 5-grid centres (≈ 81 px and 807 px), so the rail meets every drop.
+ */
+function MergeDiagram() {
+  return (
+    <div className="flex flex-col">
+      <div className="grid grid-cols-5 gap-[20px]">
+        {CHANNELS.map(({ icon, label }) => (
+          <ChannelChip key={label} icon={icon} label={label} />
+        ))}
+      </div>
+      <div className="relative h-[220px]">
+        <div className="absolute inset-x-0 top-0 grid grid-cols-5 gap-[20px]">
+          {CHANNELS.map(({ label }) => (
+            <span key={label} className="mx-auto h-[140px] w-[4px] bg-(--cx-rule)" />
+          ))}
+        </div>
+        <span className="absolute inset-x-[81px] top-[140px] h-[4px] bg-(--cx-rule)" />
+        <span className="absolute top-[140px] left-1/2 h-[80px] w-[4px] -translate-x-1/2 bg-(--cx-fg)" />
+      </div>
+      <div className="flex items-center justify-center gap-[28px] rounded-[24px] bg-(--cx-accent) px-[40px] py-[36px] text-(--cx-on-accent)">
+        <Inbox className="size-[64px]" strokeWidth={2.25} />
+        <p className="text-[44px] leading-[1.3] font-bold">All channels, one inbox</p>
+      </div>
+    </div>
+  )
+}
+
+function Cover() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col justify-center gap-[48px]">
+        <Eyebrow>AI-native CRM</Eyebrow>
+        <Hero>Your next deal is in an unread DM</Hero>
+        <Body>One AI-native CRM that merges every channel your UAE customers use.</Body>
+        <SwipeCue />
+      </div>
+      <Footer page={1} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function Channels() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[64px]">
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>The channels</Eyebrow>
+          <Title>Where your customers already are</Title>
+        </div>
+        <div className="flex flex-col gap-[40px]">
+          <Point n="1">WhatsApp, day and night</Point>
+          <Point n="2">Instagram DMs and comments</Point>
+          <Point n="3">Calls to the showroom</Point>
+          <Point n="4">Emails from the website</Point>
+        </div>
+      </div>
+      <Footer page={2} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function TheCost() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[56px]">
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>The cost</Eyebrow>
+          <Title>Where deals quietly die</Title>
+        </div>
+        <div className="grid grid-cols-2 gap-[24px]">
+          <CompareColumn
+            kind="dont"
+            items={['Repeat your story', 'Follow-ups slip', 'No clear owner']}
+          />
+          <CompareColumn
+            kind="do"
+            items={['One shared timeline', 'Auto follow-ups', 'One clear owner']}
+          />
+        </div>
+      </div>
+      <Footer page={3} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function OnePlace() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[48px]">
+        <Photo
+          src={dubaiPhoto}
+          alt="The Dubai skyline at night"
+          className="h-[520px] w-full rounded-[24px]"
+        />
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>The shift</Eyebrow>
+          <Title>One place for it all</Title>
+          <Body>Every channel into one customer story.</Body>
+        </div>
+      </div>
+      <Footer page={4} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function UnifiedInbox() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[48px]">
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>Unified inbox</Eyebrow>
+          <Title>Stop switching apps</Title>
+        </div>
+        <MergeDiagram />
+        <Body>No DM, call or email left unanswered.</Body>
+      </div>
+      <Footer page={5} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function AiLayer() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[64px]">
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>The AI layer</Eyebrow>
+          <Title>AI that reads the whole story</Title>
+        </div>
+        <div className="flex flex-col gap-[40px]">
+          <Point n="1">Summarises every thread</Point>
+          <Point n="2">Drafts the next reply</Point>
+          <Point n="3">Reminds you to follow up</Point>
+        </div>
+      </div>
+      <Footer page={6} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function NeverMiss() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[48px]">
+        <Photo
+          src={phonePhoto}
+          alt="A customer holding a phone"
+          className="h-[520px] w-full rounded-[24px]"
+        />
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>Never miss</Eyebrow>
+          <Title>No message left behind</Title>
+          <Body>Every channel lands on one timeline.</Body>
+        </div>
+      </div>
+      <Footer page={7} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function Recap() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col gap-[64px]">
+        <div className="flex flex-col gap-[32px]">
+          <Eyebrow>The recap</Eyebrow>
+          <Title>What merging gives you</Title>
+        </div>
+        <div className="flex flex-col gap-[40px]">
+          <Point n="1">One inbox for every channel</Point>
+          <Point n="2">One record per customer</Point>
+          <Point n="3">One AI that sees it all</Point>
+          <Point n="4">One team, zero missed</Point>
+        </div>
+      </div>
+      <Footer page={8} total={TOTAL} />
+    </Frame>
+  )
+}
+
+function Closer() {
+  return (
+    <Frame>
+      <div className="flex flex-1 flex-col justify-center gap-[48px]">
+        <Eyebrow>Before you go</Eyebrow>
+        <Title>Never miss another customer</Title>
+        <Body>Follow for more on AI-native CRM built for the Gulf.</Body>
+        <AuthorCard />
+      </div>
+      <Footer page={9} total={TOTAL} />
+    </Frame>
+  )
+}
+
+export const slides = [
+  Cover,
+  Channels,
+  TheCost,
+  OnePlace,
+  UnifiedInbox,
+  AiLayer,
+  NeverMiss,
+  Recap,
+  Closer,
+]
