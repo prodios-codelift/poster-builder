@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
 import {
   ArrowLeftIcon,
   ChevronDownIcon,
@@ -7,9 +8,18 @@ import {
   DownloadIcon,
   FileTextIcon,
   ImageIcon,
+  SaveIcon,
 } from 'lucide-react'
 import type { FC, RefObject } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +31,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  clearCarouselTextEdits,
+  getCarouselTextEditCount,
+  getPendingCarouselTextEdits,
+  subscribeCarouselTextEdits,
+} from '@/linkedin-carousels/carousel-text-edits'
 import { exportCarouselAsImages, exportCarouselAsPdf } from '@/linkedin-carousels/export-carousel'
 import {
   CAROUSEL_HEIGHT,
@@ -29,6 +45,8 @@ import {
   themes,
   type LinkedInCarousel,
 } from '@/linkedin-carousels/registry'
+import { saveCarouselText } from '@/linkedin-carousels/save-carousel-text'
+import { useCarouselInlineEdit } from '@/linkedin-carousels/use-carousel-inline-edit'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/linkedin-carousel/')({
@@ -58,9 +76,17 @@ function useSize(ref: RefObject<HTMLElement | null>) {
     const element = ref.current
     if (!element) return
 
+    const update = (width: number, height: number) => {
+      setSize((current) =>
+        current.width === width && current.height === height ? current : { width, height },
+      )
+    }
+
+    update(element.clientWidth, element.clientHeight)
+
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
-      setSize({ width, height })
+      update(width, height)
     })
 
     observer.observe(element)
@@ -74,13 +100,17 @@ function ScaledSlide({
   Slide,
   className,
   fit = 'width',
+  onSlideElement,
 }: {
   Slide: FC
   className?: string
   /** width: scale to container width (sidebar thumbs). contain: fit inside width and height (main canvas). */
   fit?: 'width' | 'contain'
+  /** Fires with the unscaled slide root once layout scale is ready (main canvas only). */
+  onSlideElement?: (element: HTMLDivElement | null) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const slideInnerRef = useRef<HTMLDivElement>(null)
   const { width, height } = useSize(containerRef)
 
   const scale =
@@ -94,6 +124,13 @@ function ScaledSlide({
 
   const displayWidth = CAROUSEL_WIDTH * scale
   const displayHeight = CAROUSEL_HEIGHT * scale
+  const ready = scale > 0
+
+  useEffect(() => {
+    if (!onSlideElement) return
+    onSlideElement(ready ? slideInnerRef.current : null)
+    return () => onSlideElement(null)
+  }, [ready, onSlideElement, Slide])
 
   return (
     <div
@@ -106,23 +143,91 @@ function ScaledSlide({
         className,
       )}
     >
-      {scale > 0 ? (
+      <div
+        className="relative overflow-hidden shadow-lg"
+        style={{
+          width: ready ? displayWidth : 0,
+          height: ready ? displayHeight : 0,
+          visibility: ready ? 'visible' : 'hidden',
+        }}
+      >
         <div
-          className="relative overflow-hidden shadow-lg"
-          style={{ width: displayWidth, height: displayHeight }}
+          ref={slideInnerRef}
+          className="origin-top-left"
+          style={{
+            width: CAROUSEL_WIDTH,
+            height: CAROUSEL_HEIGHT,
+            transform: `scale(${ready ? scale : 0.0001})`,
+            pointerEvents: ready ? 'auto' : 'none',
+          }}
         >
-          <div
-            className="origin-top-left"
-            style={{
-              width: CAROUSEL_WIDTH,
-              height: CAROUSEL_HEIGHT,
-              transform: `scale(${scale})`,
-            }}
-          >
-            <Slide />
-          </div>
+          {/* Memoized so scale/measure re-renders do not wipe contentEditable. */}
+          <SlideMount Slide={Slide} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+const SlideMount = memo(function SlideMount({ Slide }: { Slide: FC }) {
+  return <Slide />
+})
+
+/** Isolated from studio chrome re-renders so contentEditable text is not reset. */
+const MainSlideCanvas = memo(function MainSlideCanvas({
+  Slide,
+  onSlideElement,
+}: {
+  Slide: FC
+  onSlideElement: (element: HTMLDivElement | null) => void
+}) {
+  return <ScaledSlide Slide={Slide} fit="contain" onSlideElement={onSlideElement} />
+})
+
+function SaveCarouselButton({ carouselId }: { carouselId: string }) {
+  const editCount = useSyncExternalStore(
+    subscribeCarouselTextEdits,
+    getCarouselTextEditCount,
+    () => 0,
+  )
+  const saveFn = useServerFn(saveCarouselText)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSave() {
+    if (editCount === 0 || isSaving) return
+    setIsSaving(true)
+    setError(null)
+    try {
+      const edits = getPendingCarouselTextEdits().map(({ locations, prevText, nextText }) => ({
+        locations,
+        prevText,
+        nextText,
+      }))
+      await saveFn({ data: { carouselId, edits } })
+      clearCarouselTextEdits()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Save failed')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {error ? (
+        <span className="max-w-48 truncate text-xs text-destructive" title={error}>
+          {error}
+        </span>
       ) : null}
+      <Button
+        variant="outline"
+        disabled={editCount === 0 || isSaving}
+        onClick={() => void onSave()}
+      >
+        {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
+        {isSaving ? 'Saving...' : 'Save'}
+      </Button>
     </div>
   )
 }
@@ -218,9 +323,7 @@ function OverviewGrid({
             onClick={() => onOpenSlide(index)}
             className={cn(
               'flex flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-              isActive
-                ? 'bg-accent/60 ring-2 ring-ring'
-                : 'ring-1 ring-border hover:bg-muted',
+              isActive ? 'bg-accent/60 ring-2 ring-ring' : 'ring-1 ring-border hover:bg-muted',
             )}
           >
             <div className="overflow-hidden rounded-md">
@@ -247,6 +350,10 @@ function RouteComponent() {
   const [studioView, setStudioView] = useState<StudioView>('slide')
   const [isExporting, setIsExporting] = useState(false)
   const overviewGridRef = useRef<HTMLDivElement>(null)
+  const [slideCanvasElement, setSlideCanvasElement] = useState<HTMLDivElement | null>(null)
+  const onSlideElement = useCallback((element: HTMLDivElement | null) => {
+    setSlideCanvasElement(element)
+  }, [])
 
   const library = libraryForTab(activeTab)
   const selectedId = selectedByTab[activeTab]
@@ -256,11 +363,31 @@ function RouteComponent() {
     [library, selectedId],
   )
 
+  const isUserPost =
+    activeTab === 'posts' && Boolean(selectedId && carousels.some((c) => c.id === selectedId))
+  const canInlineEdit =
+    import.meta.env.DEV && isUserPost && studioView === 'slide' && Boolean(selected)
+
   const totalSlides = selected?.slides.length ?? 0
   const CurrentSlide = selected?.slides[slideIndex]
   const canGoPrev = slideIndex > 0
   const canGoNext = slideIndex < totalSlides - 1
   const canExport = Boolean(selected) && !isExporting
+
+  useCarouselInlineEdit({
+    enabled: canInlineEdit,
+    carouselId: canInlineEdit ? selectedId : null,
+    slideIndex,
+    canvasElement: slideCanvasElement,
+  })
+
+  useEffect(() => {
+    clearCarouselTextEdits()
+  }, [selectedByTab.posts])
+
+  useEffect(() => {
+    if (activeTab !== 'posts') clearCarouselTextEdits()
+  }, [activeTab])
 
   function selectCarousel(id: string) {
     setSelectedByTab((current) => ({ ...current, [activeTab]: id }))
@@ -293,7 +420,9 @@ function RouteComponent() {
 
       if (
         target.isContentEditable ||
-        target.closest('input, textarea, select, [contenteditable="true"]')
+        target.closest(
+          'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]',
+        )
       ) {
         return
       }
@@ -332,9 +461,7 @@ function RouteComponent() {
 
       if (studioView !== 'overview') return
 
-      const columns = overviewGridRef.current
-        ? getGridColumnCount(overviewGridRef.current)
-        : 1
+      const columns = overviewGridRef.current ? getGridColumnCount(overviewGridRef.current) : 1
 
       if (event.key === 'ArrowUp') {
         if (slideIndex === 0) return
@@ -394,11 +521,12 @@ function RouteComponent() {
           </TabsList>
         </Tabs>
 
-        <div className="flex flex-1 justify-end">
+        <div className="flex flex-1 items-center justify-end gap-2">
+          {import.meta.env.DEV && isUserPost && selectedId ? (
+            <SaveCarouselButton carouselId={selectedId} />
+          ) : null}
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline" disabled={!canExport} />}
-            >
+            <DropdownMenuTrigger render={<Button variant="outline" disabled={!canExport} />}>
               {isExporting ? (
                 <Spinner data-icon="inline-start" />
               ) : (
@@ -465,7 +593,7 @@ function RouteComponent() {
             ) : CurrentSlide ? (
               <>
                 <div className="min-h-0 flex-1">
-                  <ScaledSlide Slide={CurrentSlide} fit="contain" />
+                  <MainSlideCanvas Slide={CurrentSlide} onSlideElement={onSlideElement} />
                 </div>
 
                 <div className="flex shrink-0 items-center justify-center gap-3">
