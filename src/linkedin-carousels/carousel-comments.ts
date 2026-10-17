@@ -9,6 +9,22 @@ export const SLIDE_COMMENT_MARKER_RE =
 
 export type CommentPayload = { note: string; hint?: string; page?: number }
 
+export type CommentTarget = { line: number; column: number }
+
+export type CarouselComment = {
+  id: string
+  /** 1-based line of the marker. */
+  line: number
+  ts: string
+  note: string
+  page?: number
+  /**
+   * Start of the JSX element the marker sits in (1-based line, 0-based
+   * column), matching that element's rendered `data-tsd-source`.
+   */
+  target: CommentTarget | null
+}
+
 export type ParsedTsdSource = {
   /** Project-relative path without a leading slash. */
   file: string
@@ -35,7 +51,9 @@ const SKIP_KEYS = new Set([
   'innerComments',
 ])
 
-const LINKEDIN_CAROUSELS_PREFIX = 'src/linkedin-carousels/'
+const COMMENTABLE_PREFIXES = ['src/linkedin-carousels/carousels/', 'src/linkedin-carousels/themes/']
+
+export const COMMENT_ID_RE = /^c-[a-f0-9]+$/
 
 type JsxContainer = JSXElement | JSXFragment
 
@@ -79,14 +97,25 @@ export function parseTsdSource(value: string): ParsedTsdSource | null {
   return { file, line, column: column1Based - 1 }
 }
 
-/** Only carousel / theme `.tsx` files under `src/linkedin-carousels/`. */
+/** Only carousel / theme `.tsx` files under `src/linkedin-carousels/{carousels,themes}/`. */
 export function isCommentableFile(file: string): boolean {
   const normalized = file.replace(/\\/g, '/').replace(/^\//, '')
   return (
-    normalized.startsWith(LINKEDIN_CAROUSELS_PREFIX) &&
+    COMMENTABLE_PREFIXES.some((prefix) => normalized.startsWith(prefix)) &&
     normalized.endsWith('.tsx') &&
     !normalized.includes('..')
   )
+}
+
+/**
+ * Source file of a studio entry: `<id>` → its carousel, `theme-<id>--<palette>`
+ * → the theme demo every palette variant shares.
+ */
+export function carouselSourceFile(carouselId: string): string {
+  const theme = /^theme-(.+?)--/.exec(carouselId)
+  return theme
+    ? `src/linkedin-carousels/themes/${theme[1]}/index.tsx`
+    : `src/linkedin-carousels/carousels/${carouselId}/index.tsx`
 }
 
 export function newCommentId(): string {
@@ -225,4 +254,112 @@ export function insertCarouselComment(
     return { ok: false, error: 'comment would produce invalid source' }
   }
   return { ok: true, source: next, id, line: offsetToLine(next, plan.offset + 1) }
+}
+
+function markerRe(): RegExp {
+  return new RegExp(SLIDE_COMMENT_MARKER_RE.source)
+}
+
+function markerRegexFor(id: string): RegExp {
+  return new RegExp(
+    `\\{\\/\\*\\s*@slide-comment\\s+id="${id}"\\s+ts="[^"]+"\\s+text="[A-Za-z0-9_\\-]+={0,2}"\\s*\\*\\/\\}`,
+  )
+}
+
+function parsePage(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : undefined
+}
+
+/** Every `@slide-comment` marker in the file, in source order. Targets unresolved. */
+export function parseMarkers(source: string): CarouselComment[] {
+  const comments: CarouselComment[] = []
+  const lines = source.split('\n')
+  const re = markerRe()
+  for (let i = 0; i < lines.length; i++) {
+    const m = re.exec(lines[i])
+    if (!m) continue
+    const [, id, ts, encoded] = m
+    try {
+      const payload = JSON.parse(b64urlDecode(encoded)) as Partial<CommentPayload>
+      if (typeof payload.note !== 'string') continue
+      comments.push({
+        id,
+        line: i + 1,
+        ts,
+        note: payload.note,
+        page: parsePage(payload.page),
+        target: null,
+      })
+    } catch {
+      // Malformed payload: not ours to show.
+    }
+  }
+  return comments
+}
+
+/** Fill in each comment's `target`: the JSX element whose body holds the marker. */
+export function resolveTargets(source: string, comments: CarouselComment[]): CarouselComment[] {
+  const ast = parseCarouselSource(source)
+  const lines = source.split('\n')
+  return comments.map((comment) => {
+    if (!ast) return { ...comment, target: null }
+    const column = Math.max(0, (lines[comment.line - 1] ?? '').search(/\{\/\*\s*@slide-comment/))
+    const element = findJsxAncestors(ast, comment.line, column).find((node) => t.isJSXElement(node))
+    const start = element?.loc?.start
+    return { ...comment, target: start ? { line: start.line, column: start.column } : null }
+  })
+}
+
+/** Replace the note of marker `id`, keeping id, ts and other payload fields. */
+export function updateMarkerNote(source: string, id: string, note: string): string | null {
+  const re = new RegExp(
+    `(\\{\\/\\*\\s*@slide-comment\\s+id="${id}"\\s+ts="[^"]+"\\s+text=")([A-Za-z0-9_\\-]+={0,2})("\\s*\\*\\/\\})`,
+  )
+  const m = re.exec(source)
+  if (!m) return null
+  let payload: CommentPayload
+  try {
+    payload = JSON.parse(b64urlDecode(m[2])) as CommentPayload
+  } catch {
+    return null
+  }
+  const encoded = b64urlEncode(JSON.stringify({ ...payload, note }))
+  return source.slice(0, m.index) + m[1] + encoded + m[3] + source.slice(m.index + m[0].length)
+}
+
+/**
+ * Strip marker `id`. The line goes away only when nothing else was on it, so
+ * content sharing the line survives.
+ *
+ * Inserting into an inline element (`<Hero>Text</Hero>`) breaks it onto two
+ * lines (see `buildMarker`). When that exact shape is left behind (an opening
+ * tag, then inline content that closes the element on the next line), the
+ * two lines are joined back together.
+ */
+export function removeMarker(source: string, id: string): string | null {
+  const lines = source.split('\n')
+  const re = markerRegexFor(id)
+  const hit = lines.findIndex((line) => re.test(line))
+  if (hit === -1) return null
+  const stripped = lines[hit].replace(re, '')
+  if (stripped.trim() !== '') {
+    lines[hit] = stripped
+    return lines.join('\n')
+  }
+  lines.splice(hit, 1)
+  const opening = lines[hit - 1]?.trimEnd() ?? ''
+  const content = lines[hit]?.trim() ?? ''
+  if (
+    /<[A-Za-z][^<>]*>$/.test(opening) &&
+    !opening.endsWith('/>') &&
+    content !== '' &&
+    !content.startsWith('<') &&
+    !content.startsWith('{/*') &&
+    /<\/[A-Za-z][\w.]*>$/.test(content)
+  ) {
+    lines.splice(hit - 1, 2, opening + content)
+  }
+  return lines.join('\n')
 }
