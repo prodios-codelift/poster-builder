@@ -802,20 +802,22 @@ export function CommentModeToggle({
   onToggle: () => void
   className?: string
 }) {
+  const label =
+    (active ? 'Exit comment mode' : 'Enter comment mode') + (count > 0 ? ` (${count} pending)` : '')
+
   return (
     <Button
       type="button"
       variant={active ? 'secondary' : 'outline'}
       aria-pressed={active}
-      aria-label={
-        (active ? 'Exit comment mode' : 'Enter comment mode') +
-        (count > 0 ? ` (${count} pending)` : '')
-      }
+      aria-label={label}
+      title={label}
       onClick={onToggle}
       className={cn(className)}
     >
       <MessageSquareIcon data-icon="inline-start" />
-      {active ? 'Commenting' : 'Comment'}
+      {/* Icon-only below `lg` so the studio header fits narrow screens. */}
+      <span className="hidden lg:inline">{active ? 'Commenting' : 'Comment'}</span>
       {count > 0 ? (
         <span className="ml-0.5 min-w-4 rounded-full bg-sky-500 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums">
           {count}
