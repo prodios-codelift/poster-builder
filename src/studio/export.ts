@@ -4,8 +4,7 @@ import { domToBlob } from 'modern-screenshot'
 import { createElement, type FC } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
-import { CAROUSEL_HEIGHT, CAROUSEL_WIDTH } from './dimensions'
-import type { LinkedInCarousel } from './types'
+import type { SlideSize, StudioPost } from './types'
 
 function toSlug(name: string) {
   return (
@@ -49,14 +48,14 @@ function waitForFrame() {
   })
 }
 
-async function captureSlide(Slide: FC): Promise<Blob> {
+async function captureSlide(Slide: FC, { width, height }: SlideSize): Promise<Blob> {
   const host = document.createElement('div')
   host.style.cssText = [
     'position:fixed',
     'left:-10000px',
     'top:0',
-    `width:${CAROUSEL_WIDTH}px`,
-    `height:${CAROUSEL_HEIGHT}px`,
+    `width:${width}px`,
+    `height:${height}px`,
     'overflow:hidden',
     'pointer-events:none',
   ].join(';')
@@ -70,8 +69,8 @@ async function captureSlide(Slide: FC): Promise<Blob> {
     await waitForFrame()
 
     const blob = await domToBlob(host, {
-      width: CAROUSEL_WIDTH,
-      height: CAROUSEL_HEIGHT,
+      width,
+      height,
       scale: 1,
       type: 'image/png',
     })
@@ -88,10 +87,10 @@ async function captureSlide(Slide: FC): Promise<Blob> {
   }
 }
 
-async function captureAllSlides(carousel: LinkedInCarousel): Promise<Blob[]> {
+async function captureAllSlides(post: StudioPost, size: SlideSize): Promise<Blob[]> {
   const blobs: Blob[] = []
-  for (const Slide of carousel.slides) {
-    blobs.push(await captureSlide(Slide))
+  for (const Slide of post.slides) {
+    blobs.push(await captureSlide(Slide, size))
   }
   return blobs
 }
@@ -105,30 +104,32 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-export async function exportCarouselAsPdf(carousel: LinkedInCarousel) {
-  const slug = toSlug(carousel.name)
-  const blobs = await captureAllSlides(carousel)
+export async function exportAsPdf(post: StudioPost, size: SlideSize) {
+  const { width, height } = size
+  const orientation = width > height ? 'landscape' : 'portrait'
+  const slug = toSlug(post.name)
+  const blobs = await captureAllSlides(post, size)
   const pdf = new jsPDF({
-    orientation: 'portrait',
+    orientation,
     unit: 'px',
-    format: [CAROUSEL_WIDTH, CAROUSEL_HEIGHT],
+    format: [width, height],
     hotfixes: ['px_scaling'],
   })
 
   for (let index = 0; index < blobs.length; index += 1) {
     if (index > 0) {
-      pdf.addPage([CAROUSEL_WIDTH, CAROUSEL_HEIGHT], 'portrait')
+      pdf.addPage([width, height], orientation)
     }
     const dataUrl = await blobToDataUrl(blobs[index]!)
-    pdf.addImage(dataUrl, 'PNG', 0, 0, CAROUSEL_WIDTH, CAROUSEL_HEIGHT)
+    pdf.addImage(dataUrl, 'PNG', 0, 0, width, height)
   }
 
   pdf.save(`${slug}.pdf`)
 }
 
-export async function exportCarouselAsImages(carousel: LinkedInCarousel) {
-  const slug = toSlug(carousel.name)
-  const blobs = await captureAllSlides(carousel)
+export async function exportAsImages(post: StudioPost, size: SlideSize) {
+  const slug = toSlug(post.name)
+  const blobs = await captureAllSlides(post, size)
   const zip = new JSZip()
 
   for (let index = 0; index < blobs.length; index += 1) {
