@@ -37,7 +37,14 @@ import {
   getPendingCarouselTextEdits,
   subscribeCarouselTextEdits,
 } from '@/linkedin-carousels/carousel-text-edits'
-import { exportCarouselAsImages, exportCarouselAsPdf } from '@/linkedin-carousels/export-carousel'
+import {
+  CommentModeLayer,
+  CommentModeToggle,
+} from '@/linkedin-carousels/comment-mode-layer'
+import {
+  exportCarouselAsImages,
+  exportCarouselAsPdf,
+} from '@/linkedin-carousels/export-carousel'
 import {
   CAROUSEL_HEIGHT,
   CAROUSEL_WIDTH,
@@ -61,11 +68,19 @@ type CarouselSearch = {
   view?: StudioView
 }
 
-function validateCarouselSearch(search: Record<string, unknown>): CarouselSearch {
+function validateCarouselSearch(
+  search: Record<string, unknown>,
+): CarouselSearch {
   const slide = Number(search.slide)
   return {
-    tab: search.tab === 'posts' || search.tab === 'themes' ? search.tab : undefined,
-    carousel: typeof search.carousel === 'string' && search.carousel ? search.carousel : undefined,
+    tab:
+      search.tab === 'posts' || search.tab === 'themes'
+        ? search.tab
+        : undefined,
+    carousel:
+      typeof search.carousel === 'string' && search.carousel
+        ? search.carousel
+        : undefined,
     slide: Number.isInteger(slide) && slide >= 1 ? slide : undefined,
     view: search.view === 'overview' ? 'overview' : undefined,
   }
@@ -85,7 +100,9 @@ function defaultTab(): LibraryTab {
 }
 
 function getGridColumnCount(grid: HTMLElement): number {
-  const columns = getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean)
+  const columns = getComputedStyle(grid)
+    .gridTemplateColumns.split(/\s+/)
+    .filter(Boolean)
   return Math.max(columns.length, 1)
 }
 
@@ -98,7 +115,9 @@ function useSize(ref: RefObject<HTMLElement | null>) {
 
     const update = (width: number, height: number) => {
       setSize((current) =>
-        current.width === width && current.height === height ? current : { width, height },
+        current.width === width && current.height === height
+          ? current
+          : { width, height },
       )
     }
 
@@ -208,7 +227,9 @@ const MainSlideCanvas = memo(function MainSlideCanvas({
   Slide: FC
   onSlideElement: (element: HTMLDivElement | null) => void
 }) {
-  return <ScaledSlide Slide={Slide} fit="contain" onSlideElement={onSlideElement} />
+  return (
+    <ScaledSlide Slide={Slide} fit="contain" onSlideElement={onSlideElement} />
+  )
 })
 
 function SaveCarouselButton() {
@@ -226,12 +247,14 @@ function SaveCarouselButton() {
     setIsSaving(true)
     setError(null)
     try {
-      const edits = getPendingCarouselTextEdits().map(({ file, position, prevText, nextText }) => ({
-        file,
-        position,
-        prevText,
-        nextText,
-      }))
+      const edits = getPendingCarouselTextEdits().map(
+        ({ file, position, prevText, nextText }) => ({
+          file,
+          position,
+          prevText,
+          nextText,
+        }),
+      )
       await saveFn({ data: { edits } })
       clearCarouselTextEdits()
     } catch (cause) {
@@ -244,7 +267,10 @@ function SaveCarouselButton() {
   return (
     <div className="flex items-center gap-2">
       {error ? (
-        <span className="max-w-48 truncate text-xs text-destructive" title={error}>
+        <span
+          className="max-w-48 truncate text-xs text-destructive"
+          title={error}
+        >
           {error}
         </span>
       ) : null}
@@ -253,7 +279,11 @@ function SaveCarouselButton() {
         disabled={editCount === 0 || isSaving}
         onClick={() => void onSave()}
       >
-        {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
+        {isSaving ? (
+          <Spinner data-icon="inline-start" />
+        ) : (
+          <SaveIcon data-icon="inline-start" />
+        )}
         {isSaving ? 'Saving...' : 'Save'}
       </Button>
     </div>
@@ -279,7 +309,9 @@ function LibraryList({
   }, [selectedId])
 
   if (items.length === 0) {
-    return <p className="px-2 py-3 text-sm text-muted-foreground">{emptyLabel}</p>
+    return (
+      <p className="px-2 py-3 text-sm text-muted-foreground">{emptyLabel}</p>
+    )
   }
 
   return (
@@ -294,24 +326,35 @@ function LibraryList({
               ref={isSelected ? selectedRef : undefined}
               onClick={() => onSelect(carousel.id)}
               className={cn(
-                'flex w-full flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
+                'flex w-full flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 border border-transparent',
+                isSelected
+                  ? 'bg-accent text-accent-foreground border-border'
+                  : 'hover:bg-muted',
               )}
             >
               {FirstSlide ? (
                 <div className="overflow-hidden rounded-md ring-1 ring-border">
-                  <ScaledSlide Slide={FirstSlide} fit="width" className="[&>div]:shadow-none" />
+                  <ScaledSlide
+                    Slide={FirstSlide}
+                    fit="width"
+                    className="[&>div]:shadow-none"
+                  />
                 </div>
               ) : null}
               <div className="flex flex-col gap-0.5 px-0.5">
-                <span className="truncate text-sm font-medium">{carousel.name}</span>
+                <span className="truncate text-sm font-medium">
+                  {carousel.name}
+                </span>
                 <span
                   className={cn(
                     'text-xs',
-                    isSelected ? 'text-accent-foreground/70' : 'text-muted-foreground',
+                    isSelected
+                      ? 'text-accent-foreground/70'
+                      : 'text-muted-foreground',
                   )}
                 >
-                  {carousel.slides.length} {carousel.slides.length === 1 ? 'slide' : 'slides'}
+                  {carousel.slides.length}{' '}
+                  {carousel.slides.length === 1 ? 'slide' : 'slides'}
                 </span>
               </div>
             </button>
@@ -336,7 +379,10 @@ function OverviewGrid({
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   useEffect(() => {
-    cellRefs.current[slideIndex]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    cellRefs.current[slideIndex]?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+    })
   }, [slideIndex])
 
   return (
@@ -359,11 +405,17 @@ function OverviewGrid({
             onClick={() => onOpenSlide(index)}
             className={cn(
               'flex flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-              isActive ? 'bg-accent/60 ring-2 ring-ring' : 'ring-1 ring-border hover:bg-muted',
+              isActive
+                ? 'bg-accent/60 ring-2 ring-ring'
+                : 'ring-1 ring-border hover:bg-muted',
             )}
           >
             <div className="overflow-hidden rounded-md">
-              <ScaledSlide Slide={Slide} fit="width" className="[&>div]:shadow-none" />
+              <ScaledSlide
+                Slide={Slide}
+                fit="width"
+                className="[&>div]:shadow-none"
+              />
             </div>
             <span className="text-center text-xs tabular-nums text-muted-foreground">
               {index + 1}
@@ -379,28 +431,43 @@ function RouteComponent() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [isExporting, setIsExporting] = useState(false)
+  const [commentMode, setCommentMode] = useState(false)
   const overviewGridRef = useRef<HTMLDivElement>(null)
-  const [slideCanvasElement, setSlideCanvasElement] = useState<HTMLDivElement | null>(null)
+  const [slideCanvasElement, setSlideCanvasElement] =
+    useState<HTMLDivElement | null>(null)
   const onSlideElement = useCallback((element: HTMLDivElement | null) => {
     setSlideCanvasElement(element)
   }, [])
+  const exitCommentMode = useCallback(() => setCommentMode(false), [])
 
   const activeTab = search.tab ?? defaultTab()
   const studioView: StudioView = search.view ?? 'slide'
   const library = libraryForTab(activeTab)
 
   const selected = useMemo(
-    () => library.find((carousel) => carousel.id === search.carousel) ?? library[0] ?? null,
+    () =>
+      library.find((carousel) => carousel.id === search.carousel) ??
+      library[0] ??
+      null,
     [library, search.carousel],
   )
   const selectedId = selected?.id ?? null
 
   const isUserPost = activeTab === 'posts' && Boolean(selected)
+  const canComment =
+    import.meta.env.DEV && studioView === 'slide' && Boolean(selected)
   const canInlineEdit =
-    import.meta.env.DEV && isUserPost && studioView === 'slide' && Boolean(selected)
+    import.meta.env.DEV &&
+    isUserPost &&
+    studioView === 'slide' &&
+    Boolean(selected) &&
+    !commentMode
 
   const totalSlides = selected?.slides.length ?? 0
-  const slideIndex = Math.min(Math.max((search.slide ?? 1) - 1, 0), Math.max(totalSlides - 1, 0))
+  const slideIndex = Math.min(
+    Math.max((search.slide ?? 1) - 1, 0),
+    Math.max(totalSlides - 1, 0),
+  )
   const CurrentSlide = selected?.slides[slideIndex]
   const canGoPrev = slideIndex > 0
   const canGoNext = slideIndex < totalSlides - 1
@@ -412,6 +479,10 @@ function RouteComponent() {
   useEffect(() => {
     if (selectedId) lastSelectedByTab.current[activeTab] = selectedId
   }, [activeTab, selectedId])
+
+  useEffect(() => {
+    if (!canComment) setCommentMode(false)
+  }, [canComment])
 
   useCarouselInlineEdit({
     enabled: canInlineEdit,
@@ -470,7 +541,10 @@ function RouteComponent() {
   }
 
   function openSlide(index: number) {
-    updateSearch({ slide: index === 0 ? undefined : index + 1, view: undefined })
+    updateSearch({
+      slide: index === 0 ? undefined : index + 1,
+      view: undefined,
+    })
   }
 
   useEffect(() => {
@@ -524,7 +598,9 @@ function RouteComponent() {
 
       if (studioView !== 'overview') return
 
-      const columns = overviewGridRef.current ? getGridColumnCount(overviewGridRef.current) : 1
+      const columns = overviewGridRef.current
+        ? getGridColumnCount(overviewGridRef.current)
+        : 1
 
       if (event.key === 'ArrowUp') {
         if (slideIndex === 0) return
@@ -540,11 +616,26 @@ function RouteComponent() {
         event.stopPropagation()
         goToSlide(slideIndex + columns)
       }
+
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (event.defaultPrevented || isOnInteractiveControl) return
+        event.preventDefault()
+        setStudioView('slide')
+        return
+      }
     }
 
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [canGoNext, canGoPrev, goToSlide, setStudioView, slideIndex, studioView, totalSlides])
+  }, [
+    canGoNext,
+    canGoPrev,
+    goToSlide,
+    setStudioView,
+    slideIndex,
+    studioView,
+    totalSlides,
+  ])
 
   async function runExport(action: 'pdf' | 'images') {
     if (!selected || isExporting) return
@@ -574,7 +665,9 @@ function RouteComponent() {
           >
             <ArrowLeftIcon />
           </Button>
-          <h1 className="truncate text-sm font-medium">LinkedIn carousel studio</h1>
+          <h1 className="truncate text-sm font-medium">
+            LinkedIn carousel studio
+          </h1>
         </div>
 
         <Tabs value={studioView} onValueChange={switchStudioView}>
@@ -585,9 +678,19 @@ function RouteComponent() {
         </Tabs>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-          {import.meta.env.DEV && isUserPost && selectedId ? <SaveCarouselButton /> : null}
+          {canComment ? (
+            <CommentModeToggle
+              active={commentMode}
+              onToggle={() => setCommentMode((on) => !on)}
+            />
+          ) : null}
+          {import.meta.env.DEV && isUserPost && selectedId ? (
+            <SaveCarouselButton />
+          ) : null}
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" disabled={!canExport} />}>
+            <DropdownMenuTrigger
+              render={<Button variant="outline" disabled={!canExport} />}
+            >
               {isExporting ? (
                 <Spinner data-icon="inline-start" />
               ) : (
@@ -635,7 +738,11 @@ function RouteComponent() {
               <LibraryList
                 items={library}
                 selectedId={selectedId}
-                emptyLabel={activeTab === 'posts' ? 'No posts yet.' : 'No themes registered yet.'}
+                emptyLabel={
+                  activeTab === 'posts'
+                    ? 'No posts yet.'
+                    : 'No themes registered yet.'
+                }
                 onSelect={selectCarousel}
               />
             </div>
@@ -653,8 +760,17 @@ function RouteComponent() {
               />
             ) : CurrentSlide ? (
               <>
-                <div className="min-h-0 flex-1">
-                  <MainSlideCanvas Slide={CurrentSlide} onSlideElement={onSlideElement} />
+                <div className="relative min-h-0 flex-1">
+                  <MainSlideCanvas
+                    Slide={CurrentSlide}
+                    onSlideElement={onSlideElement}
+                  />
+                  <CommentModeLayer
+                    enabled={commentMode}
+                    canvasElement={slideCanvasElement}
+                    pageIndex={slideIndex}
+                    onExit={exitCommentMode}
+                  />
                 </div>
 
                 <div className="flex shrink-0 items-center justify-center gap-3">

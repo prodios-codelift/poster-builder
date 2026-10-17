@@ -301,11 +301,11 @@ function TheCost() {
         <div className="grid grid-cols-2 gap-[24px]">
           <CompareColumn
             kind="dont"
-            items={['Make them repeat', 'Chase leads from memory', 'Leave leads unowned']}
+            items={['Ask them to repeat', 'Forget to follow up', 'Hope someone replies']}
           />
           <CompareColumn
             kind="do"
-            items={['One shared timeline', 'Automatic reminders', 'An owner per lead']}
+            items={['One shared timeline', 'Automatic reminders', 'Assign a salesperson']}
           />
         </div>
       </div>
