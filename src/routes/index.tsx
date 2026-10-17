@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { ArrowRightIcon } from 'lucide-react'
+import { ArrowRightIcon, ImagesIcon } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
 
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -82,6 +82,19 @@ function Home() {
           <FormatCardItem key={format.title} {...format} />
         ))}
       </div>
+      <Link
+        to="/assets"
+        className="flex items-center gap-3 rounded-xl px-4 py-3 ring-1 ring-foreground/10 outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <ImagesIcon aria-hidden="true" className="size-5 text-muted-foreground" />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm font-medium">Asset library</span>
+          <span className="text-sm text-muted-foreground">
+            Logos, photos and fonts shared by every post.
+          </span>
+        </span>
+        <ArrowRightIcon aria-hidden="true" className="size-4" />
+      </Link>
     </main>
   )
 }

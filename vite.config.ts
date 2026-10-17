@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig, lazyPlugins } from 'vite-plus'
 import { devtools } from '@tanstack/devtools-vite'
 
@@ -6,6 +8,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+import { assetLibraryPlugin } from './src/asset-library/vite-plugin-asset-library'
 import { slideSourcePlugin } from './src/linkedin-carousels/vite-plugin-slide-source'
 
 const config = defineConfig({
@@ -16,9 +19,14 @@ const config = defineConfig({
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: ['.agents/**'],
   },
-  resolve: { tsconfigPaths: true },
+  resolve: {
+    tsconfigPaths: true,
+    // Global asset library: `import logo from '@assets/logo.svg'`.
+    alias: { '@assets': fileURLToPath(new URL('./assets', import.meta.url)) },
+  },
   plugins: lazyPlugins(() => [
     slideSourcePlugin(),
+    assetLibraryPlugin(),
     devtools(),
     tailwindcss(),
     tanstackStart(),

@@ -24,6 +24,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 
+import { AssetManager } from '@/asset-library/asset-manager'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ import {
 import { carouselSourceFile } from '@/linkedin-carousels/carousel-comments'
 import { CommentModeLayer, CommentModeToggle } from '@/linkedin-carousels/comment-mode-layer'
 import { exportCarouselAsImages, exportCarouselAsPdf } from '@/linkedin-carousels/export-carousel'
+import { ImageSwapLayer } from '@/linkedin-carousels/image-swap-layer'
 import {
   CAROUSEL_HEIGHT,
   CAROUSEL_WIDTH,
@@ -55,7 +57,9 @@ import { useCarouselComments } from '@/linkedin-carousels/use-carousel-comments'
 import { useCarouselInlineEdit } from '@/linkedin-carousels/use-carousel-inline-edit'
 import { cn } from '@/lib/utils'
 
-type LibraryTab = 'posts' | 'themes'
+type LibraryTab = 'posts' | 'themes' | 'assets'
+/** Sidebar tabs that list carousels; the Assets tab keeps showing one of these. */
+type CarouselTab = Exclude<LibraryTab, 'assets'>
 type StudioView = 'slide' | 'overview'
 
 /** Studio state kept in the URL so a refresh reopens the same slide. Defaults are omitted. */
@@ -70,7 +74,10 @@ type CarouselSearch = {
 function validateCarouselSearch(search: Record<string, unknown>): CarouselSearch {
   const slide = Number(search.slide)
   return {
-    tab: search.tab === 'posts' || search.tab === 'themes' ? search.tab : undefined,
+    tab:
+      search.tab === 'posts' || search.tab === 'themes' || search.tab === 'assets'
+        ? search.tab
+        : undefined,
     carousel: typeof search.carousel === 'string' && search.carousel ? search.carousel : undefined,
     slide: Number.isInteger(slide) && slide >= 1 ? slide : undefined,
     view: search.view === 'overview' ? 'overview' : undefined,
@@ -82,12 +89,19 @@ export const Route = createFileRoute('/linkedin-carousel/')({
   component: RouteComponent,
 })
 
-function libraryForTab(tab: LibraryTab): LinkedInCarousel[] {
+function libraryForTab(tab: CarouselTab): LinkedInCarousel[] {
   return tab === 'posts' ? carousels : themes
 }
 
-function defaultTab(): LibraryTab {
+function defaultTab(): CarouselTab {
   return carousels.length > 0 ? 'posts' : 'themes'
+}
+
+/** Which carousel list `id` belongs to, so the Assets tab can keep it on the canvas. */
+function carouselTabOf(id: string | undefined): CarouselTab {
+  if (id && themes.some((carousel) => carousel.id === id)) return 'themes'
+  if (id && carousels.some((carousel) => carousel.id === id)) return 'posts'
+  return defaultTab()
 }
 
 /** Tailwind's `md` breakpoint: the library sits inline above it and in a drawer below. */
@@ -352,16 +366,21 @@ function LibraryPanel({
         <TabsList data-library-tabs className="w-full">
           <TabsTrigger value="posts">My posts</TabsTrigger>
           <TabsTrigger value="themes">Themes</TabsTrigger>
+          {import.meta.env.DEV ? <TabsTrigger value="assets">Assets</TabsTrigger> : null}
         </TabsList>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pt-1">
-        <LibraryList
-          items={items}
-          selectedId={selectedId}
-          emptyLabel={activeTab === 'posts' ? 'No posts yet.' : 'No themes registered yet.'}
-          onSelect={onSelect}
-        />
-      </div>
+      {activeTab === 'assets' ? (
+        <AssetManager variant="panel" />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pt-1">
+          <LibraryList
+            items={items}
+            selectedId={selectedId}
+            emptyLabel={activeTab === 'posts' ? 'No posts yet.' : 'No themes registered yet.'}
+            onSelect={onSelect}
+          />
+        </div>
+      )}
     </Tabs>
   )
 }
@@ -533,8 +552,10 @@ function RouteComponent() {
   }, [])
 
   const activeTab = search.tab ?? defaultTab()
+  const carouselTab: CarouselTab =
+    activeTab === 'assets' ? carouselTabOf(search.carousel) : activeTab
   const studioView: StudioView = search.view ?? 'slide'
-  const library = libraryForTab(activeTab)
+  const library = libraryForTab(carouselTab)
 
   const selected = useMemo(
     () => library.find((carousel) => carousel.id === search.carousel) ?? library[0] ?? null,
@@ -542,7 +563,7 @@ function RouteComponent() {
   )
   const selectedId = selected?.id ?? null
 
-  const isUserPost = activeTab === 'posts' && Boolean(selected)
+  const isUserPost = carouselTab === 'posts' && Boolean(selected)
   const canComment = import.meta.env.DEV && studioView === 'slide' && Boolean(selected)
   const canInlineEdit =
     import.meta.env.DEV && isUserPost && studioView === 'slide' && Boolean(selected) && !commentMode
@@ -555,11 +576,11 @@ function RouteComponent() {
   const canExport = Boolean(selected) && !isExporting
 
   // Remember each tab's pick for the session so switching tabs back restores it.
-  const lastSelectedByTab = useRef<Partial<Record<LibraryTab, string>>>({})
+  const lastSelectedByTab = useRef<Partial<Record<CarouselTab, string>>>({})
 
   useEffect(() => {
-    if (selectedId) lastSelectedByTab.current[activeTab] = selectedId
-  }, [activeTab, selectedId])
+    if (selectedId) lastSelectedByTab.current[carouselTab] = selectedId
+  }, [carouselTab, selectedId])
 
   useEffect(() => {
     if (!canComment) setCommentMode(false)
@@ -578,9 +599,10 @@ function RouteComponent() {
     canvasElement: slideCanvasElement,
   })
 
+  // Not keyed on activeTab: opening the Assets tab keeps the carousel and its unsaved text.
   useEffect(() => {
     clearCarouselTextEdits()
-  }, [activeTab, selectedId])
+  }, [carouselTab, selectedId])
 
   /** Replace (not push) so stepping through slides does not fill browser history. */
   const updateSearch = useCallback(
@@ -615,7 +637,16 @@ function RouteComponent() {
   }
 
   function switchTab(tab: string | number | null) {
+    if (tab === 'assets') {
+      updateSearch({ tab: 'assets' })
+      return
+    }
     if (tab !== 'posts' && tab !== 'themes') return
+    // Back from Assets to the list the open carousel belongs to: keep it and its slide.
+    if (tab === carouselTab) {
+      updateSearch({ tab: tab === defaultTab() ? undefined : tab })
+      return
+    }
     updateSearch({
       tab: tab === defaultTab() ? undefined : tab,
       carousel: lastSelectedByTab.current[tab],
@@ -924,6 +955,7 @@ function RouteComponent() {
                     onRemove={slideComments.remove}
                     onExit={exitCommentMode}
                   />
+                  <ImageSwapLayer enabled={canInlineEdit} canvasElement={slideCanvasElement} />
                 </div>
 
                 <div className="flex shrink-0 items-center justify-center gap-3">
@@ -956,7 +988,7 @@ function RouteComponent() {
           ) : (
             <div className="flex flex-1 items-center justify-center">
               <p className="text-sm text-muted-foreground">
-                {activeTab === 'posts'
+                {carouselTab === 'posts'
                   ? 'Select a post to preview its slides.'
                   : 'Select a theme to preview its slides.'}
               </p>
