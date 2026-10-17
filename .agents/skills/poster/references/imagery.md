@@ -61,7 +61,7 @@ Pick the photo that passes most of these:
 
 - Stock photos **set a mood. They are never evidence.**
 - No strangers presented as customers, employees, speakers or the author. No stand-in screenshots or fake product shots.
-- A slide that needs a real portrait, product screenshot, team photo or logo needs the **real file from the user**. Ask for it.
+- A slide that needs a real portrait, product screenshot, team photo or logo needs the **real file from the user**. Look in the global `assets/` folder first. If it isn't there, ask the user for it and save it there.
 
 ## 6. Sourcing photos from Unsplash
 
@@ -112,6 +112,7 @@ curl -L -o src/linkedin-carousels/carousels/<slug>/assets/cover.jpg \
 ### Always
 
 - **Download into `carousels/<slug>/assets/` and import it.** Never hotlink a remote URL: the exporter can't capture cross-origin images, so the PNG/PDF comes out blank.
+- Brand files the user supplies (logos, portraits, screenshots) go in the global `assets/` folder instead and are imported as `@assets/<file>`, so every post can reuse them. Stock photos stay with the post that uses them.
 - Use descriptive file names (`cover.jpg`, `desert-road.jpg`).
 - Add a row to `carousels/<slug>/assets/CREDITS.md` (create it if missing):
 

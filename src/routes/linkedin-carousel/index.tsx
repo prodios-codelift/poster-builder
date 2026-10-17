@@ -1,3 +1,4 @@
+import { Drawer } from '@base-ui/react/drawer'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import {
@@ -8,9 +9,11 @@ import {
   DownloadIcon,
   FileTextIcon,
   ImageIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   SaveIcon,
 } from 'lucide-react'
-import type { FC, RefObject } from 'react'
+import type { FC, ReactNode, RefObject } from 'react'
 import {
   memo,
   useCallback,
@@ -21,6 +24,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 
+import { AssetManager } from '@/asset-library/asset-manager'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -40,6 +44,7 @@ import {
 import { carouselSourceFile } from '@/linkedin-carousels/carousel-comments'
 import { CommentModeLayer, CommentModeToggle } from '@/linkedin-carousels/comment-mode-layer'
 import { exportCarouselAsImages, exportCarouselAsPdf } from '@/linkedin-carousels/export-carousel'
+import { ImageSwapLayer } from '@/linkedin-carousels/image-swap-layer'
 import {
   CAROUSEL_HEIGHT,
   CAROUSEL_WIDTH,
@@ -52,7 +57,9 @@ import { useCarouselComments } from '@/linkedin-carousels/use-carousel-comments'
 import { useCarouselInlineEdit } from '@/linkedin-carousels/use-carousel-inline-edit'
 import { cn } from '@/lib/utils'
 
-type LibraryTab = 'posts' | 'themes'
+type LibraryTab = 'posts' | 'themes' | 'assets'
+/** Sidebar tabs that list carousels; the Assets tab keeps showing one of these. */
+type CarouselTab = Exclude<LibraryTab, 'assets'>
 type StudioView = 'slide' | 'overview'
 
 /** Studio state kept in the URL so a refresh reopens the same slide. Defaults are omitted. */
@@ -67,7 +74,10 @@ type CarouselSearch = {
 function validateCarouselSearch(search: Record<string, unknown>): CarouselSearch {
   const slide = Number(search.slide)
   return {
-    tab: search.tab === 'posts' || search.tab === 'themes' ? search.tab : undefined,
+    tab:
+      search.tab === 'posts' || search.tab === 'themes' || search.tab === 'assets'
+        ? search.tab
+        : undefined,
     carousel: typeof search.carousel === 'string' && search.carousel ? search.carousel : undefined,
     slide: Number.isInteger(slide) && slide >= 1 ? slide : undefined,
     view: search.view === 'overview' ? 'overview' : undefined,
@@ -79,12 +89,74 @@ export const Route = createFileRoute('/linkedin-carousel/')({
   component: RouteComponent,
 })
 
-function libraryForTab(tab: LibraryTab): LinkedInCarousel[] {
+function libraryForTab(tab: CarouselTab): LinkedInCarousel[] {
   return tab === 'posts' ? carousels : themes
 }
 
-function defaultTab(): LibraryTab {
+function defaultTab(): CarouselTab {
   return carousels.length > 0 ? 'posts' : 'themes'
+}
+
+/** Which carousel list `id` belongs to, so the Assets tab can keep it on the canvas. */
+function carouselTabOf(id: string | undefined): CarouselTab {
+  if (id && themes.some((carousel) => carousel.id === id)) return 'themes'
+  if (id && carousels.some((carousel) => carousel.id === id)) return 'posts'
+  return defaultTab()
+}
+
+/** Tailwind's `md` breakpoint: the library sits inline above it and in a drawer below. */
+const INLINE_LIBRARY_QUERY = '(min-width: 48rem)'
+const LIBRARY_COLLAPSED_KEY = 'linkedin-carousel:library-collapsed'
+const LIBRARY_SHORTCUT = '⌘B'
+
+const libraryCollapsedListeners = new Set<() => void>()
+let libraryCollapsed: boolean | undefined
+
+function getLibraryCollapsed(): boolean {
+  if (libraryCollapsed === undefined) {
+    try {
+      libraryCollapsed = window.localStorage.getItem(LIBRARY_COLLAPSED_KEY) === '1'
+    } catch {
+      libraryCollapsed = false
+    }
+  }
+  return libraryCollapsed
+}
+
+function setLibraryCollapsed(collapsed: boolean) {
+  libraryCollapsed = collapsed
+  try {
+    window.localStorage.setItem(LIBRARY_COLLAPSED_KEY, collapsed ? '1' : '0')
+  } catch {
+    // Blocked storage only forgets the choice on the next visit.
+  }
+  for (const listener of libraryCollapsedListeners) listener()
+}
+
+function subscribeLibraryCollapsed(listener: () => void): () => void {
+  libraryCollapsedListeners.add(listener)
+  // Follow toggles made in other tabs.
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== LIBRARY_COLLAPSED_KEY) return
+    libraryCollapsed = event.newValue === '1'
+    listener()
+  }
+  window.addEventListener('storage', onStorage)
+  return () => {
+    libraryCollapsedListeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
+  }
+}
+
+function isEditableTarget(target: HTMLElement): boolean {
+  return (
+    target.isContentEditable ||
+    Boolean(
+      target.closest(
+        'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]',
+      ),
+    )
+  )
 }
 
 function getGridColumnCount(grid: HTMLElement): number {
@@ -162,12 +234,16 @@ function ScaledSlide({
         'flex items-center justify-center',
         fit === 'width' && 'w-full',
         // Inset so box-shadow has room; measuring content box keeps the slide inside.
-        fit === 'contain' && 'size-full min-h-0 p-4',
+        fit === 'contain' && 'size-full min-h-0 p-2 md:p-4',
         className,
       )}
     >
       <div
-        className="relative overflow-hidden shadow-lg"
+        className={cn(
+          'relative overflow-hidden shadow-lg',
+          // Keeps white slides distinct on the white canvas card.
+          fit === 'contain' && 'ring-1 ring-foreground/10',
+        )}
         style={
           ready
             ? { width: displayWidth, height: displayHeight }
@@ -244,22 +320,95 @@ function SaveCarouselButton() {
     }
   }
 
+  const label = isSaving ? 'Saving...' : 'Save'
+
   return (
     <div className="flex items-center gap-2">
       {error ? (
-        <span className="max-w-48 truncate text-xs text-destructive" title={error}>
+        <span className="hidden max-w-48 truncate text-xs text-destructive md:block" title={error}>
           {error}
         </span>
       ) : null}
       <Button
         variant="outline"
         disabled={editCount === 0 || isSaving}
+        aria-label={label}
+        title={error ?? label}
         onClick={() => void onSave()}
       >
         {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
-        {isSaving ? 'Saving...' : 'Save'}
+        <span className="hidden lg:inline">{label}</span>
       </Button>
     </div>
+  )
+}
+
+function LibraryPanel({
+  activeTab,
+  items,
+  selectedId,
+  onTabChange,
+  onSelect,
+}: {
+  activeTab: LibraryTab
+  items: LinkedInCarousel[]
+  selectedId: string | null
+  onTabChange: (tab: string | number | null) => void
+  onSelect: (id: string) => void
+}) {
+  return (
+    <Tabs
+      value={activeTab}
+      onValueChange={onTabChange}
+      className="flex min-h-0 flex-1 flex-col gap-0"
+    >
+      <div className="p-3 pb-2">
+        <TabsList data-library-tabs className="w-full">
+          <TabsTrigger value="posts">My posts</TabsTrigger>
+          <TabsTrigger value="themes">Themes</TabsTrigger>
+          {import.meta.env.DEV ? <TabsTrigger value="assets">Assets</TabsTrigger> : null}
+        </TabsList>
+      </div>
+      {activeTab === 'assets' ? (
+        <AssetManager variant="panel" />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pt-1">
+          <LibraryList
+            items={items}
+            selectedId={selectedId}
+            emptyLabel={activeTab === 'posts' ? 'No posts yet.' : 'No themes registered yet.'}
+            onSelect={onSelect}
+          />
+        </div>
+      )}
+    </Tabs>
+  )
+}
+
+/** The library below `md`: a left drawer that swipes, taps or Escs closed. */
+function LibraryDrawer({
+  open,
+  onOpenChange,
+  children,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  children: ReactNode
+}) {
+  return (
+    <Drawer.Root open={open} onOpenChange={onOpenChange} swipeDirection="left">
+      <Drawer.Portal>
+        <Drawer.Backdrop className="fixed inset-0 min-h-dvh bg-black [--backdrop-opacity:0.3] opacity-[calc(var(--backdrop-opacity)*(1-var(--drawer-swipe-progress)))] transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:duration-0 data-starting-style:opacity-0 data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*300ms)] dark:[--backdrop-opacity:0.6]" />
+        <Drawer.Viewport className="fixed inset-0 flex items-stretch justify-start">
+          <Drawer.Popup className="flex h-full w-[min(20rem,85vw)] flex-col border-r bg-sidebar text-sidebar-foreground shadow-xl outline-none transform-[translateX(var(--drawer-swipe-movement-x))] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:select-none data-starting-style:transform-[translateX(-100%)] data-ending-style:transform-[translateX(-100%)] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*300ms)]">
+            <Drawer.Content className="flex min-h-0 flex-1 flex-col">
+              <Drawer.Title className="sr-only">Library</Drawer.Title>
+              {children}
+            </Drawer.Content>
+          </Drawer.Popup>
+        </Drawer.Viewport>
+      </Drawer.Portal>
+    </Drawer.Root>
   )
 }
 
@@ -298,7 +447,7 @@ function LibraryList({
               onClick={() => onSelect(carousel.id)}
               className={cn(
                 'flex w-full flex-col gap-2 rounded-lg p-2 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 border border-transparent',
-                isSelected ? 'bg-accent text-accent-foreground border-border' : 'hover:bg-muted',
+                isSelected ? 'border-border bg-background shadow-xs' : 'hover:bg-muted',
               )}
             >
               {FirstSlide ? (
@@ -308,12 +457,7 @@ function LibraryList({
               ) : null}
               <div className="flex flex-col gap-0.5 px-0.5">
                 <span className="truncate text-sm font-medium">{carousel.name}</span>
-                <span
-                  className={cn(
-                    'text-xs',
-                    isSelected ? 'text-accent-foreground/70' : 'text-muted-foreground',
-                  )}
-                >
+                <span className="text-xs text-muted-foreground">
                   {carousel.slides.length} {carousel.slides.length === 1 ? 'slide' : 'slides'}
                 </span>
               </div>
@@ -348,8 +492,7 @@ function OverviewGrid({
   return (
     <div
       ref={gridRef}
-      className="grid min-h-0 flex-1 auto-rows-min content-start gap-4 overflow-y-auto p-1"
-      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))' }}
+      className="grid min-h-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] content-start gap-3 overflow-y-auto p-1 sm:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] sm:gap-4"
     >
       {slides.map((Slide, index) => {
         const isActive = index === slideIndex
@@ -393,9 +536,26 @@ function RouteComponent() {
   }, [])
   const exitCommentMode = useCallback(() => setCommentMode(false), [])
 
+  // SSR renders the library open; the stored choice applies once hydrated.
+  const isLibraryCollapsed = useSyncExternalStore(
+    subscribeLibraryCollapsed,
+    getLibraryCollapsed,
+    () => false,
+  )
+  // Only animate after a click, so a stored "collapsed" does not slide shut on load.
+  const [animateLibrary, setAnimateLibrary] = useState(false)
+  const [libraryDrawerOpen, setLibraryDrawerOpen] = useState(false)
+
+  const toggleInlineLibrary = useCallback(() => {
+    setAnimateLibrary(true)
+    setLibraryCollapsed(!getLibraryCollapsed())
+  }, [])
+
   const activeTab = search.tab ?? defaultTab()
+  const carouselTab: CarouselTab =
+    activeTab === 'assets' ? carouselTabOf(search.carousel) : activeTab
   const studioView: StudioView = search.view ?? 'slide'
-  const library = libraryForTab(activeTab)
+  const library = libraryForTab(carouselTab)
 
   const selected = useMemo(
     () => library.find((carousel) => carousel.id === search.carousel) ?? library[0] ?? null,
@@ -403,7 +563,7 @@ function RouteComponent() {
   )
   const selectedId = selected?.id ?? null
 
-  const isUserPost = activeTab === 'posts' && Boolean(selected)
+  const isUserPost = carouselTab === 'posts' && Boolean(selected)
   const canComment = import.meta.env.DEV && studioView === 'slide' && Boolean(selected)
   const canInlineEdit =
     import.meta.env.DEV && isUserPost && studioView === 'slide' && Boolean(selected) && !commentMode
@@ -416,11 +576,11 @@ function RouteComponent() {
   const canExport = Boolean(selected) && !isExporting
 
   // Remember each tab's pick for the session so switching tabs back restores it.
-  const lastSelectedByTab = useRef<Partial<Record<LibraryTab, string>>>({})
+  const lastSelectedByTab = useRef<Partial<Record<CarouselTab, string>>>({})
 
   useEffect(() => {
-    if (selectedId) lastSelectedByTab.current[activeTab] = selectedId
-  }, [activeTab, selectedId])
+    if (selectedId) lastSelectedByTab.current[carouselTab] = selectedId
+  }, [carouselTab, selectedId])
 
   useEffect(() => {
     if (!canComment) setCommentMode(false)
@@ -439,9 +599,10 @@ function RouteComponent() {
     canvasElement: slideCanvasElement,
   })
 
+  // Not keyed on activeTab: opening the Assets tab keeps the carousel and its unsaved text.
   useEffect(() => {
     clearCarouselTextEdits()
-  }, [activeTab, selectedId])
+  }, [carouselTab, selectedId])
 
   /** Replace (not push) so stepping through slides does not fill browser history. */
   const updateSearch = useCallback(
@@ -472,10 +633,20 @@ function RouteComponent() {
 
   function selectCarousel(id: string) {
     updateSearch({ carousel: id, slide: undefined })
+    setLibraryDrawerOpen(false)
   }
 
   function switchTab(tab: string | number | null) {
+    if (tab === 'assets') {
+      updateSearch({ tab: 'assets' })
+      return
+    }
     if (tab !== 'posts' && tab !== 'themes') return
+    // Back from Assets to the list the open carousel belongs to: keep it and its slide.
+    if (tab === carouselTab) {
+      updateSearch({ tab: tab === defaultTab() ? undefined : tab })
+      return
+    }
     updateSearch({
       tab: tab === defaultTab() ? undefined : tab,
       carousel: lastSelectedByTab.current[tab],
@@ -495,26 +666,46 @@ function RouteComponent() {
     })
   }
 
+  // The drawer only exists below `md`; close it if the window grows past that.
+  useEffect(() => {
+    if (!libraryDrawerOpen) return
+    const query = window.matchMedia(INLINE_LIBRARY_QUERY)
+    const onChange = () => {
+      if (query.matches) setLibraryDrawerOpen(false)
+    }
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [libraryDrawerOpen])
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return
+      if (event.key.toLowerCase() !== 'b') return
+      // Leave ⌘B to bold while editing slide text or typing a comment.
+      if (event.target instanceof HTMLElement && isEditableTarget(event.target)) return
+      event.preventDefault()
+      if (window.matchMedia(INLINE_LIBRARY_QUERY).matches) toggleInlineLibrary()
+      else setLibraryDrawerOpen((open) => !open)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [toggleInlineLibrary])
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.altKey || event.ctrlKey || event.metaKey) return
       if (totalSlides === 0) return
+      // The drawer is modal; keys belong to it, not the slide behind.
+      if (libraryDrawerOpen) return
 
       const target = event.target
       if (!(target instanceof HTMLElement)) return
+      if (isEditableTarget(target)) return
 
-      if (
-        target.isContentEditable ||
-        target.closest(
-          'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]',
-        )
-      ) {
-        return
-      }
-
-      // Leave arrow keys to menus and the sidebar library tabs.
+      // Leave arrow keys to menus and the library tabs.
       if (target.closest('[role="menu"], [role="menuitem"]')) return
-      if (target.closest('aside [data-slot="tabs-list"]')) return
+      if (target.closest('[data-library-tabs]')) return
 
       const isOnInteractiveControl = Boolean(
         target.closest('button, a, [role="menuitem"], [role="tab"]'),
@@ -573,7 +764,16 @@ function RouteComponent() {
 
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [canGoNext, canGoPrev, goToSlide, setStudioView, slideIndex, studioView, totalSlides])
+  }, [
+    canGoNext,
+    canGoPrev,
+    goToSlide,
+    libraryDrawerOpen,
+    setStudioView,
+    slideIndex,
+    studioView,
+    totalSlides,
+  ])
 
   async function runExport(action: 'pdf' | 'images') {
     if (!selected || isExporting) return
@@ -589,10 +789,46 @@ function RouteComponent() {
     }
   }
 
+  const libraryPanel = (
+    <LibraryPanel
+      activeTab={activeTab}
+      items={library}
+      selectedId={selectedId}
+      onTabChange={switchTab}
+      onSelect={selectCarousel}
+    />
+  )
+  const libraryToggleLabel = isLibraryCollapsed ? 'Show library' : 'Hide library'
+  const exportLabel = isExporting ? 'Exporting...' : 'Export'
+
   return (
-    <div className="flex h-svh flex-col">
-      <header className="flex items-center gap-3 border-b px-4 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+    <div className="flex h-dvh flex-col bg-background md:bg-sidebar">
+      <header className="flex items-center gap-2 border-b px-3 py-2.5 md:border-b-0 md:px-5 md:py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 md:gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="hidden md:inline-flex"
+            aria-controls="carousel-library"
+            aria-expanded={!isLibraryCollapsed}
+            aria-label={libraryToggleLabel}
+            title={`${libraryToggleLabel} (${LIBRARY_SHORTCUT})`}
+            onClick={toggleInlineLibrary}
+          >
+            {isLibraryCollapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="md:hidden"
+            aria-haspopup="dialog"
+            aria-expanded={libraryDrawerOpen}
+            aria-label="Open library"
+            title="Open library"
+            onClick={() => setLibraryDrawerOpen(true)}
+          >
+            <PanelLeftOpenIcon />
+          </Button>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -603,7 +839,21 @@ function RouteComponent() {
           >
             <ArrowLeftIcon />
           </Button>
-          <h1 className="truncate text-sm font-medium">LinkedIn carousel studio</h1>
+          <h1 className="sr-only text-sm font-medium sm:not-sr-only sm:flex sm:min-w-0 sm:items-baseline sm:gap-1.5">
+            <span className="hidden shrink-0 text-muted-foreground lg:inline">
+              LinkedIn carousel studio
+            </span>
+            {selected ? (
+              <>
+                <span aria-hidden className="hidden text-muted-foreground/60 lg:inline">
+                  /
+                </span>
+                <span className="truncate">{selected.name}</span>
+              </>
+            ) : (
+              <span className="truncate lg:hidden">LinkedIn carousel studio</span>
+            )}
+          </h1>
         </div>
 
         <Tabs value={studioView} onValueChange={switchStudioView}>
@@ -623,14 +873,23 @@ function RouteComponent() {
           ) : null}
           {import.meta.env.DEV && isUserPost && selectedId ? <SaveCarouselButton /> : null}
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" disabled={!canExport} />}>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  disabled={!canExport}
+                  aria-label={exportLabel}
+                  title={exportLabel}
+                />
+              }
+            >
               {isExporting ? (
                 <Spinner data-icon="inline-start" />
               ) : (
                 <DownloadIcon data-icon="inline-start" />
               )}
-              {isExporting ? 'Exporting...' : 'Export'}
-              <ChevronDownIcon data-icon="inline-end" />
+              <span className="hidden lg:inline">{exportLabel}</span>
+              <ChevronDownIcon data-icon="inline-end" className="hidden sm:block" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-auto">
               <DropdownMenuGroup>
@@ -654,31 +913,24 @@ function RouteComponent() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[16rem_1fr]">
-        <aside className="flex min-h-0 flex-col border-r">
-          <Tabs
-            value={activeTab}
-            onValueChange={switchTab}
-            className="flex min-h-0 flex-1 flex-col gap-0"
-          >
-            <div className="sticky top-0 z-10 border-b bg-background p-3 pb-2">
-              <TabsList className="w-full">
-                <TabsTrigger value="posts">My posts</TabsTrigger>
-                <TabsTrigger value="themes">Themes</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              <LibraryList
-                items={library}
-                selectedId={selectedId}
-                emptyLabel={activeTab === 'posts' ? 'No posts yet.' : 'No themes registered yet.'}
-                onSelect={selectCarousel}
-              />
-            </div>
-          </Tabs>
+      <div className="flex min-h-0 flex-1 md:px-2 md:pb-2">
+        {/* Clip, not hidden: a clip box is not a scroll container, so the list's
+            scrollIntoView cannot shift it sideways while collapsed. */}
+        <aside
+          id="carousel-library"
+          aria-label="Library"
+          inert={isLibraryCollapsed}
+          className={cn(
+            'hidden min-h-0 shrink-0 overflow-clip md:flex',
+            animateLibrary &&
+              'transition-[width] duration-200 ease-out motion-reduce:transition-none',
+          )}
+          style={{ width: isLibraryCollapsed ? 0 : '16rem' }}
+        >
+          <div className="flex min-h-0 w-64 shrink-0 flex-col">{libraryPanel}</div>
         </aside>
 
-        <section className="flex min-h-0 flex-col gap-6 bg-muted/40 p-6">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-muted/40 p-3 md:gap-6 md:rounded-xl md:bg-background md:p-6 md:shadow-xs md:ring-1 md:ring-foreground/[0.06]">
           {selected && selected.slides.length > 0 ? (
             studioView === 'overview' ? (
               <OverviewGrid
@@ -703,12 +955,14 @@ function RouteComponent() {
                     onRemove={slideComments.remove}
                     onExit={exitCommentMode}
                   />
+                  <ImageSwapLayer enabled={canInlineEdit} canvasElement={slideCanvasElement} />
                 </div>
 
                 <div className="flex shrink-0 items-center justify-center gap-3">
                   <Button
                     variant="outline"
                     size="icon"
+                    className="max-md:size-10"
                     aria-label="Previous slide"
                     disabled={!canGoPrev}
                     onClick={() => goToSlide(slideIndex - 1)}
@@ -721,6 +975,7 @@ function RouteComponent() {
                   <Button
                     variant="outline"
                     size="icon"
+                    className="max-md:size-10"
                     aria-label="Next slide"
                     disabled={!canGoNext}
                     onClick={() => goToSlide(slideIndex + 1)}
@@ -733,7 +988,7 @@ function RouteComponent() {
           ) : (
             <div className="flex flex-1 items-center justify-center">
               <p className="text-sm text-muted-foreground">
-                {activeTab === 'posts'
+                {carouselTab === 'posts'
                   ? 'Select a post to preview its slides.'
                   : 'Select a theme to preview its slides.'}
               </p>
@@ -741,6 +996,10 @@ function RouteComponent() {
           )}
         </section>
       </div>
+
+      <LibraryDrawer open={libraryDrawerOpen} onOpenChange={setLibraryDrawerOpen}>
+        {libraryPanel}
+      </LibraryDrawer>
     </div>
   )
 }

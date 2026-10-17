@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssetsIndexRouteImport } from './routes/assets/index'
 import { Route as LinkedinCarouselIndexRouteImport } from './routes/linkedin-carousel/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssetsIndexRoute = AssetsIndexRouteImport.update({
+  id: '/assets/',
+  path: '/assets/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LinkedinCarouselIndexRoute = LinkedinCarouselIndexRouteImport.update({
@@ -25,27 +31,31 @@ const LinkedinCarouselIndexRoute = LinkedinCarouselIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assets/': typeof AssetsIndexRoute
   '/linkedin-carousel/': typeof LinkedinCarouselIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assets': typeof AssetsIndexRoute
   '/linkedin-carousel': typeof LinkedinCarouselIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/assets/': typeof AssetsIndexRoute
   '/linkedin-carousel/': typeof LinkedinCarouselIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/linkedin-carousel/'
+  fullPaths: '/' | '/assets/' | '/linkedin-carousel/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/linkedin-carousel'
-  id: '__root__' | '/' | '/linkedin-carousel/'
+  to: '/' | '/assets' | '/linkedin-carousel'
+  id: '__root__' | '/' | '/assets/' | '/linkedin-carousel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AssetsIndexRoute: typeof AssetsIndexRoute
   LinkedinCarouselIndexRoute: typeof LinkedinCarouselIndexRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assets/': {
+      id: '/assets/'
+      path: '/assets'
+      fullPath: '/assets/'
+      preLoaderRoute: typeof AssetsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/linkedin-carousel/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AssetsIndexRoute: AssetsIndexRoute,
   LinkedinCarouselIndexRoute: LinkedinCarouselIndexRoute,
 }
 export const routeTree = rootRouteImport

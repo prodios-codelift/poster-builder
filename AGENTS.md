@@ -25,3 +25,7 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+## Global assets
+
+Logos, headshots and other files shared by posts live in the repo-root `assets/` folder. Import them as `import acmeLogo from '@assets/acme-logo.svg'`. Under `vp dev` the folder is managed at `/assets` or in the carousel studio's **Assets** tab, backed by the dev-only `/__assets` API in `src/asset-library/`.

@@ -62,7 +62,7 @@ Write the code first, so the markdown can quote it verbatim. Contract:
 - Ten slides, in this order: **Cover** (eyebrow + hero + one-line subtitle + swipe cue), **PhotoCover** (dark themes: full-bleed `PhotoBackdrop` with bottom-aligned text; light themes: framed photo above the hero, no text on the photo), **Content** (title + a 3-item list using the row component), **ImageSplit** (photo about 520–540 px tall + eyebrow, title, one-line body), **IconGrid** (2 × 2 `IconCard`), **QuoteSlide** (placeholder quote attributed to `AUTHOR.name`), **StatSlide** (a rule-of-thumb number, never an invented statistic), **Compare** (two `CompareColumn`s, three items each), **Steps** (three `Step`s), **Closer** (CTA + `<AuthorCard />`). Footers run `1/10` … `10/10`. Each slide passes the vertical budget in `authoring.md` (≈ 1050 px with a 64 px footer and 48 px clearance).
 - At most one slide (usually `QuoteSlide`) uses a CSS background recipe via `Frame className` (dot grid, stripes, wash). No background images.
 - `export const slides = [Cover, PhotoCover, Content, ImageSplit, IconGrid, QuoteSlide, StatSlide, Compare, Steps, Closer]`.
-- Self-contained: only its own `./assets/` imports, no imports from other carousels or themes, no animation.
+- Self-contained: only its own `./assets/` imports, no imports from other carousels or themes, no `@assets/…` imports (the global asset library is for posts, not theme demos), no animation.
 
 ## Step 4b — Photos
 

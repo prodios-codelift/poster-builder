@@ -79,8 +79,9 @@ Follow `references/imagery.md`. In short:
 
 1. Decide what the visual is for (set a mood, show the subject, stand for an idea, or support a number). If the type alone is stronger, use no photo.
 2. **Photos come from Unsplash.** Use an Unsplash tool if the session has one (search for a tool whose name contains `unsplash`, including deferred tools, with `ToolSearch`). If not, use the Unsplash API with `UNSPLASH_ACCESS_KEY`, or the plain Unsplash URLs. Download into `carousels/<slug>/assets/`, never hotlink, and add a row to `assets/CREDITS.md`.
-3. **Icons**: `@solar-icons/react` by default, `lucide-react` when the theme already uses Lucide. **One icon family and one style per poster.**
-4. When the photo is central to the concept, show the user 2–3 candidates (photo page links) and let them pick.
+3. **Logos, headshots and other brand files** come from the global `assets/` folder at the repo root, imported with `import acmeLogo from '@assets/acme-logo.svg'`. Check it before asking the user for a file. Save files the user gives you there.
+4. **Icons**: `@solar-icons/react` by default, `lucide-react` when the theme already uses Lucide. **One icon family and one style per poster.**
+5. When the photo is central to the concept, show the user 2–3 candidates (photo page links) and let them pick.
 
 ## Step 6 — Build `carousels/<slug>/index.tsx`
 
@@ -123,4 +124,4 @@ Give the user:
 
 ## Editing an existing poster
 
-Read its `index.tsx` and the theme named on its `// Theme:` line. Keep the tokens and layout; change only what was asked. When you swap a photo, replace the file in `assets/` and update `CREDITS.md`.
+Read its `index.tsx` and the theme named on its `// Theme:` line. Keep the tokens and layout; change only what was asked. When you swap a photo, replace the file in the poster's own `assets/` and update `CREDITS.md`. For a global asset (`@assets/…`), point the import at a different file instead of overwriting the shared one, because other posts may use it.

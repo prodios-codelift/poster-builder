@@ -218,7 +218,8 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 
 ## Assets
 
-- Put images in `carousels/<slug>/assets/` and import them: `import portrait from './assets/portrait.jpg'` → `<img src={portrait} … />`. Same-origin imports are inlined by the exporter.
+- **Check the global asset library first.** Files you can reuse in any post, such as logos, brand marks, headshots and product shots the user supplied, live in the repo-root `assets/` folder. Import them with `import acmeLogo from '@assets/acme-logo.svg'`. List `assets/` before asking for a file or downloading one. Save files the user gives you there so later posts can reuse them, using flat names with a lowercase extension (`acme-logo.svg`, not `logos/Acme.SVG`). The user manages the folder at `/assets` or in the studio's **Assets** tab under `vp dev`, where they can also click an image on a slide, or drag an asset onto it, to swap it.
+- Put images used by only one carousel (its stock photos) in `carousels/<slug>/assets/` and import them: `import portrait from './assets/portrait.jpg'` → `<img src={portrait} … />`. Same-origin imports are inlined by the exporter.
 - **Never hotlink remote image URLs** — cross-origin images break or blank the export.
 - Give every `<img>` explicit pixel `width`/`height` (or a sized wrapper) and `object-cover` so layout doesn't shift.
 - **Stock photos** are allowed when the theme's photo slides (`PhotoCover`, `ImageSplit`) fit the topic. Copy a photo from the theme's `assets/` into the carousel's `assets/`, or download a better-matched photo from Unsplash (free Unsplash License only, never Unsplash+), resized to the size it is shown at (about 1080 × 1350 for a cover, 1200 × 700 for a split; under ~350 KB). Every stock photo gets a row in `carousels/<slug>/assets/CREDITS.md` (file, photographer, Unsplash URL).
@@ -239,7 +240,7 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - [ ] Every `Footer` has the right `page` and `total = slides.length`.
 - [ ] Accent kept to ≤ 2 roles per slide; contrast passes.
 - [ ] No invented statistics, quotes or anecdotes.
-- [ ] Imported assets exist on disk; no remote image URLs; no animation classes.
+- [ ] Imported assets exist on disk (`./assets/…` or `@assets/…`); no remote image URLs; no animation classes.
 - [ ] Every stock photo has a `CREDITS.md` row, is shown through the theme's `Photo`, and no text sits on an untinted photo.
 - [ ] Theme carousels start with `// Theme: <id>` and use the theme's components verbatim.
 - [ ] `registry.ts` has the import + entry in the `carousels` array (My posts); `id` = slug.
