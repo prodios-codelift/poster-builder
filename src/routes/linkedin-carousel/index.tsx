@@ -211,7 +211,7 @@ const MainSlideCanvas = memo(function MainSlideCanvas({
   return <ScaledSlide Slide={Slide} fit="contain" onSlideElement={onSlideElement} />
 })
 
-function SaveCarouselButton({ carouselId }: { carouselId: string }) {
+function SaveCarouselButton() {
   const editCount = useSyncExternalStore(
     subscribeCarouselTextEdits,
     getCarouselTextEditCount,
@@ -226,12 +226,13 @@ function SaveCarouselButton({ carouselId }: { carouselId: string }) {
     setIsSaving(true)
     setError(null)
     try {
-      const edits = getPendingCarouselTextEdits().map(({ locations, prevText, nextText }) => ({
-        locations,
+      const edits = getPendingCarouselTextEdits().map(({ file, position, prevText, nextText }) => ({
+        file,
+        position,
         prevText,
         nextText,
       }))
-      await saveFn({ data: { carouselId, edits } })
+      await saveFn({ data: { edits } })
       clearCarouselTextEdits()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Save failed')
@@ -584,9 +585,7 @@ function RouteComponent() {
         </Tabs>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-          {import.meta.env.DEV && isUserPost && selectedId ? (
-            <SaveCarouselButton carouselId={selectedId} />
-          ) : null}
+          {import.meta.env.DEV && isUserPost && selectedId ? <SaveCarouselButton /> : null}
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="outline" disabled={!canExport} />}>
               {isExporting ? (

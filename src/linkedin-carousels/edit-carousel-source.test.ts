@@ -1,135 +1,91 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { applyCarouselTextEdits, parseCarouselSource } from './edit-carousel-source'
+import { applyCarouselTextEdits } from './edit-carousel-source'
 
-function locOf(source: string, needle: string): { line: number; column: number } {
+const FILE = 'src/linkedin-carousels/carousels/x/index.tsx'
+
+function positionOf(source: string, needle: string): string {
   const index = source.indexOf(needle)
   if (index < 0) throw new Error(`needle not found: ${needle}`)
   const before = source.slice(0, index)
   const line = before.split('\n').length
   const lastNl = before.lastIndexOf('\n')
-  const column = lastNl < 0 ? index : index - lastNl - 1
-  return { line, column }
+  return `${line}:${lastNl < 0 ? index : index - lastNl - 1}`
+}
+
+function edit(source: string, anchor: string, prevText: string, nextText: string) {
+  return { file: FILE, position: positionOf(source, anchor), prevText, nextText }
 }
 
 describe('applyCarouselTextEdits', () => {
-  it('replaces JSX text children', () => {
-    const source = `function Cover() {
+  const source = `function Cover() {
   return (
     <Frame>
       <Hero>Your next deal is in an unread DM</Hero>
+      <Body>
+        Same words
+      </Body>
+      <Body>Same words</Body>
     </Frame>
   )
 }
 `
-    const loc = locOf(source, '<Hero>')
+
+  it('replaces the JSX text at the exact position', () => {
     const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: 'Your next deal is in an unread DM',
-        nextText: 'Your next deal is in WhatsApp',
-      },
+      edit(source, '<Hero>', 'Your next deal is in an unread DM', 'Fresh headline'),
     ])
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.source).toContain('<Hero>Your next deal is in WhatsApp</Hero>')
-    expect(parseCarouselSource(result.source)).not.toBeNull()
+    expect(result).toEqual({
+      ok: true,
+      source: source.replace('Your next deal is in an unread DM', 'Fresh headline'),
+    })
   })
 
-  it('replaces a string prop', () => {
-    const source = `function Channels() {
-  return <Point n="1">WhatsApp, day and night</Point>
-}
-`
-    const loc = locOf(source, '<Point')
+  it('only edits the clicked occurrence of duplicated text', () => {
     const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: '1',
-        nextText: '01',
-      },
+      edit(source, '<Body>Same words', 'Same words', 'Changed'),
     ])
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.source).toContain('n="01"')
+    expect(result.ok && result.source).toContain('<Body>Changed</Body>')
+    expect(result.ok && result.source).toContain('        Same words\n')
   })
 
-  it('replaces a string inside an array prop', () => {
-    const source = `function TheCost() {
-  return (
-    <CompareColumn
-      kind="dont"
-      items={['Make them repeat', 'Chase leads from memory', 'Leave leads unowned']}
-    />
-  )
-}
-`
-    const loc = locOf(source, '<CompareColumn')
+  it('keeps indentation of multi-line text', () => {
     const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: 'Make them repeat',
-        nextText: 'Make customers repeat themselves',
-      },
+      edit(source, '<Body>\n', 'Same words', 'Different'),
     ])
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.source).toContain("'Make customers repeat themselves'")
-    expect(result.source).toContain("'Chase leads from memory'")
+    expect(result.ok && result.source).toContain('\n        Different\n      </Body>')
   })
 
-  it('replaces a string literal in a JSX expression', () => {
-    const source = `function Label({ kind }: { kind: 'do' | 'dont' }) {
-  return <p>{kind === 'do' ? 'Do' : "Don't"}</p>
-}
-`
-    const loc = locOf(source, '<p>')
+  it('wraps text that is unsafe as raw JSX', () => {
     const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: "Don't",
-        nextText: 'Avoid',
-      },
+      edit(source, '<Hero>', 'Your next deal is in an unread DM', "a {b} <c> it's"),
     ])
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.source).toContain('"Avoid"')
-    expect(result.source).toContain("'Do'")
+    expect(result.ok && result.source).toContain("<Hero>{'a {b} <c> it\\'s'}</Hero>")
   })
 
-  it('rejects expressions that are not string literals', () => {
-    const source = `function Footer({ page }: { page: number }) {
-  return <p>{page}</p>
-}
-`
-    const loc = locOf(source, '<p>')
+  it('applies several edits in one file', () => {
     const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: '3',
-        nextText: '4',
-      },
+      edit(source, '<Hero>', 'Your next deal is in an unread DM', 'One'),
+      edit(source, '<Body>Same words', 'Same words', 'Two'),
+    ])
+    expect(result.ok && result.source).toContain('<Hero>One</Hero>')
+    expect(result.ok && result.source).toContain('<Body>Two</Body>')
+  })
+
+  it('rejects when the text no longer matches', () => {
+    const result = applyCarouselTextEdits(source, [edit(source, '<Hero>', 'something else', 'x')])
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects an element that is not a single text element', () => {
+    const result = applyCarouselTextEdits(source, [edit(source, '<Frame>', 'x', 'y')])
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects a position with no element', () => {
+    const result = applyCarouselTextEdits(source, [
+      { file: FILE, position: '1:0', prevText: 'a', nextText: 'b' },
     ])
     expect(result.ok).toBe(false)
-    if (result.ok) return
-    expect(result.error).toMatch(/unique string literal/)
-  })
-
-  it('wraps JSX text containing special characters as an expression', () => {
-    const source = `function Cover() {
-  return <Hero>Plain title</Hero>
-}
-`
-    const loc = locOf(source, '<Hero>')
-    const result = applyCarouselTextEdits(source, [
-      {
-        locations: [loc],
-        prevText: 'Plain title',
-        nextText: 'Growth < scale',
-      },
-    ])
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.source).toContain("{'Growth < scale'}")
   })
 })

@@ -1,4 +1,4 @@
-import type { CarouselTextEdit, SourceLocation } from './edit-carousel-source'
+import type { CarouselTextEdit } from './edit-carousel-source'
 
 export type PendingCarouselEdit = CarouselTextEdit & {
   key: string
@@ -50,9 +50,8 @@ export function getPendingCarouselTextEdits(): PendingCarouselEdit[] {
   return [...getStore().pending.values()]
 }
 
-export function editKey(locations: SourceLocation[], prevText: string): string {
-  const locKey = locations.map((loc) => `${loc.line}:${loc.column}`).join('|')
-  return `${locKey}::${prevText}`
+export function editKey(file: string, position: string): string {
+  return `${file}@${position}`
 }
 
 export function upsertCarouselTextEdit(edit: PendingCarouselEdit): void {

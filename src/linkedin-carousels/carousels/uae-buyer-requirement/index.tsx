@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'
 import buyerPhoto from './assets/buyer.jpg'
 import inventoryPhoto from './assets/inventory.jpg'
 
@@ -66,32 +67,45 @@ function Scrap({
   )
 }
 
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="-rotate-[2deg] self-start bg-(--cx-accent) px-[20px] py-[10px] text-[28px] leading-[1.2] font-extrabold tracking-[0.12em] text-(--cx-on-accent) uppercase">
+    <p
+      className="-rotate-[2deg] self-start bg-(--cx-accent) px-[20px] py-[10px] text-[28px] leading-[1.2] font-extrabold tracking-[0.12em] text-(--cx-on-accent) uppercase"
+      {...slide}
+    >
       {children}
     </p>
   )
 }
 
-function Hero({ children }: { children: ReactNode }) {
+function Hero({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h1 className="font-(family-name:--cx-font-display) text-[128px] leading-[1.0] font-extrabold tracking-[-0.03em]">
+    <h1
+      className="font-(family-name:--cx-font-display) text-[128px] leading-[1.0] font-extrabold tracking-[-0.03em]"
+      {...slide}
+    >
       {children}
     </h1>
   )
 }
 
-function Title({ children }: { children: ReactNode }) {
+function Title({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h2 className="font-(family-name:--cx-font-display) text-[88px] leading-[1.05] font-extrabold tracking-[-0.025em]">
+    <h2
+      className="font-(family-name:--cx-font-display) text-[88px] leading-[1.05] font-extrabold tracking-[-0.025em]"
+      {...slide}
+    >
       {children}
     </h2>
   )
 }
 
-function Body({ children }: { children: ReactNode }) {
-  return <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)">{children}</p>
+function Body({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return (
+    <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)" {...slide}>
+      {children}
+    </p>
+  )
 }
 
 function SwipeCue() {
@@ -163,7 +177,7 @@ function BuyerBrief() {
           />
         </Scrap>
         <Eyebrow>The moment</Eyebrow>
-        <Title>A buyer describes a life.</Title>
+        <Title>A customer describes a life.</Title>
         <Body>
           Area. Budget. Bedrooms. Move-in date. The details arrive in conversation, not a perfect
           form.

@@ -6,6 +6,8 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+import { slideSourcePlugin } from './src/linkedin-carousels/vite-plugin-slide-source'
+
 const config = defineConfig({
   fmt: { semi: false, singleQuote: true, trailingComma: 'all', ignorePatterns: ['.agents/**'] },
   lint: {
@@ -15,7 +17,13 @@ const config = defineConfig({
     ignorePatterns: ['.agents/**'],
   },
   resolve: { tsconfigPaths: true },
-  plugins: lazyPlugins(() => [devtools(), tailwindcss(), tanstackStart(), viteReact()]),
+  plugins: lazyPlugins(() => [
+    slideSourcePlugin(),
+    devtools(),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ]),
 })
 
 export default config

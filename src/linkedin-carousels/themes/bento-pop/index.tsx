@@ -4,6 +4,7 @@ import { Calendar, Check, Coffee, type LucideIcon, Moon, Sun, X } from 'lucide-r
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'
 import coverPhoto from './assets/cover.jpg'
 import splitPhoto from './assets/split.jpg'
 
@@ -107,33 +108,46 @@ function Tile({
   )
 }
 
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="flex items-center gap-[14px] self-start rounded-full bg-(--cx-surface) px-[22px] py-[10px] text-[26px] leading-[1.2] font-semibold">
+    <p
+      className="flex items-center gap-[14px] self-start rounded-full bg-(--cx-surface) px-[22px] py-[10px] text-[26px] leading-[1.2] font-semibold"
+      {...slide}
+    >
       <span className="size-[14px] rounded-full bg-(--cx-accent)" />
       {children}
     </p>
   )
 }
 
-function Hero({ children }: { children: ReactNode }) {
+function Hero({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h1 className="font-(family-name:--cx-font-display) text-[112px] leading-[1.02] font-bold tracking-[-0.05em]">
+    <h1
+      className="font-(family-name:--cx-font-display) text-[112px] leading-[1.02] font-bold tracking-[-0.05em]"
+      {...slide}
+    >
       {children}
     </h1>
   )
 }
 
-function Title({ children }: { children: ReactNode }) {
+function Title({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h2 className="font-(family-name:--cx-font-display) text-[80px] leading-[1.06] font-bold tracking-[-0.04em]">
+    <h2
+      className="font-(family-name:--cx-font-display) text-[80px] leading-[1.06] font-bold tracking-[-0.04em]"
+      {...slide}
+    >
       {children}
     </h2>
   )
 }
 
-function Body({ children }: { children: ReactNode }) {
-  return <p className="text-[38px] leading-[1.4] font-medium">{children}</p>
+function Body({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return (
+    <p className="text-[38px] leading-[1.4] font-medium" {...slide}>
+      {children}
+    </p>
+  )
 }
 
 function BentoItem({
@@ -141,18 +155,21 @@ function BentoItem({
   n,
   children,
   className,
+  ...slide
 }: {
   tone: keyof typeof TILE_TONES
   n: string
   children: ReactNode
   className?: string
-}) {
+} & SlideProps) {
   return (
     <Tile tone={tone} className={cn('min-h-[260px] justify-between gap-[32px]', className)}>
       <span className="flex size-[64px] items-center justify-center rounded-full bg-(--cx-surface) text-[30px] leading-none font-bold">
         {n}
       </span>
-      <p className="text-[40px] leading-[1.2] font-bold tracking-[-0.02em]">{children}</p>
+      <p className="text-[40px] leading-[1.2] font-bold tracking-[-0.02em]" {...slide}>
+        {children}
+      </p>
     </Tile>
   )
 }
@@ -218,26 +235,32 @@ function IconCard({
   icon: Icon,
   tone,
   children,
+  ...slide
 }: {
   icon: LucideIcon
   tone: keyof typeof TILE_TONES
   children: ReactNode
-}) {
+} & SlideProps) {
   return (
     <Tile tone={tone} className="min-h-[300px] justify-between gap-[44px]">
       <span className="flex size-[120px] items-center justify-center rounded-full bg-(--cx-surface)">
         <Icon className="size-[60px]" strokeWidth={2} />
       </span>
-      <p className="text-[44px] leading-[1.2] font-bold tracking-[-0.02em]">{children}</p>
+      <p className="text-[44px] leading-[1.2] font-bold tracking-[-0.02em]" {...slide}>
+        {children}
+      </p>
     </Tile>
   )
 }
 
-function Quote({ children, by }: { children: ReactNode; by: string }) {
+function Quote({ children, by, ...slide }: { children: ReactNode; by: string } & SlideProps) {
   return (
     <Tile tone={2} className="gap-[36px] p-[56px]">
       <span className="text-[140px] leading-[0.6] font-bold">“</span>
-      <blockquote className="font-(family-name:--cx-font-display) text-[58px] leading-[1.2] font-bold tracking-[-0.035em]">
+      <blockquote
+        className="font-(family-name:--cx-font-display) text-[58px] leading-[1.2] font-bold tracking-[-0.035em]"
+        {...slide}
+      >
         {children}
       </blockquote>
       <p className="text-[30px] leading-[1.3] font-medium text-(--cx-muted)">— {by}</p>
@@ -284,12 +307,13 @@ function Step({
   title,
   children,
   last = false,
+  ...slide
 }: {
   n: string
   title: string
   children: ReactNode
   last?: boolean
-}) {
+} & SlideProps) {
   const tones = [1, 2, 3, 4] as const
   return (
     <Tile
@@ -301,7 +325,9 @@ function Step({
       </span>
       <div className="flex flex-col gap-[6px]">
         <p className="text-[46px] leading-[1.15] font-bold tracking-[-0.02em]">{title}</p>
-        <p className="text-[40px] leading-[1.3] font-medium">{children}</p>
+        <p className="text-[40px] leading-[1.3] font-medium" {...slide}>
+          {children}
+        </p>
       </div>
     </Tile>
   )

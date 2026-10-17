@@ -56,6 +56,7 @@ Write the code first, so the markdown can quote it verbatim. Contract:
   } satisfies Record<string, { name: string; tokens: CSSProperties }>
   ```
 - Defines the fixed components: at minimum `Eyebrow`, `Title`, `Body`, `AuthorCard` (closing-slide author block reading `AUTHOR`), `Footer({ page, total })`; usually also `Hero` (cover headline), `SwipeCue`, and one repeated-row component (`Point`, `StatCard`, …). Everything a carousel needs must be a named component — no one-off markup that only lives inside a demo slide.
+- Every component that renders its `children` as text (`Eyebrow`, `Hero`, `Title`, `Body`, the row component, `Quote`, …) is written as `function Title({ children, ...slide }: { children: ReactNode } & SlideProps)` and spreads `{...slide}` last on the element that renders the text (a `<span {...slide}>` around `{children}` when literal characters sit beside it), with `import type { SlideProps } from '../../slide-attrs'` next to the `LinkedInCarouselSlide` import. This lets the studio's My posts click-to-edit find the source of the text; see *Inline-editable text* in `../linkedin-carousel/references/authoring.md`.
 - Tailwind with explicit pixel values and an explicit `leading-[…]` on **every** text element; colours only via `--cx-*`.
 - Also defines the variation components, styled in the theme's own language: `Photo({ src, alt, className })` (grayscale image recoloured by palette tokens with blend-mode overlays, so the tint follows the palette), `PhotoBackdrop({ src })` for dark themes (full-bleed at `-z-10`, fading to `bg` under the text), `IconCard({ icon, children })`, `Quote({ children, by })`, `BigStat({ value, label })`, `CompareColumn({ kind: 'dont' | 'do', items })` and `Step({ n, title, children, last })`. Body-like text in them stays ≥ 36 px.
 - Ten slides, in this order: **Cover** (eyebrow + hero + one-line subtitle + swipe cue), **PhotoCover** (dark themes: full-bleed `PhotoBackdrop` with bottom-aligned text; light themes: framed photo above the hero, no text on the photo), **Content** (title + a 3-item list using the row component), **ImageSplit** (photo about 520–540 px tall + eyebrow, title, one-line body), **IconGrid** (2 × 2 `IconCard`), **QuoteSlide** (placeholder quote attributed to `AUTHOR.name`), **StatSlide** (a rule-of-thumb number, never an invented statistic), **Compare** (two `CompareColumn`s, three items each), **Steps** (three `Step`s), **Closer** (CTA + `<AuthorCard />`). Footers run `1/10` … `10/10`. Each slide passes the vertical budget in `authoring.md` (≈ 1050 px with a 64 px footer and 48 px clearance).
@@ -145,6 +146,7 @@ export const themes: LinkedInCarousel[] = [
 - [ ] Type scale stays within `authoring.md` bounds (nothing below 26 px); every text element has explicit `leading-[…]`; hero max words agree with `authoring.md` (≤ 8).
 - [ ] Layout states the density → alignment rule and how to compose new pieces.
 - [ ] Every component the CTA slide uses (`AuthorCard`, …) is documented in Fixed components.
+- [ ] Every text component takes `...slide` (`& SlideProps`) and spreads it on its text element; the plugin test (`vp test`) reports no "does not forward slide props" warning for the demo.
 - [ ] Every code block in `theme.md` matches `index.tsx` character for character.
 - [ ] All ten demo slides pass the vertical budget; `Footer` numbers run 1/10 … 10/10.
 - [ ] `assets/cover.jpg` and `assets/split.jpg` exist, are free-license Unsplash photos, and are listed in `assets/CREDITS.md`; the tint visibly changes with each palette.
@@ -166,4 +168,5 @@ Tell the user the theme id and both paths, a one-line summary of the look, that 
 - ❌ Inventing colours/fonts when the user gave images, brand values or a carousel to extract from.
 - ❌ Fonts or weights that aren't loaded (the export silently falls back).
 - ❌ Editing carousels, engine files, routes, or `package.json`. The only allowed edit outside the theme folder is the registry entry (and the font `@import` when needed).
+- ❌ A text component without `...slide` — carousels copied from the theme can't be edited inline.
 - ❌ Skipping the Fixed components section — `Frame` and `Footer` are what every carousel reuses.

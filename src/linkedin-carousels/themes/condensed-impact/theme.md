@@ -79,6 +79,7 @@ import { cn } from 'cn'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'
 
 const TOKENS = {
   '--cx-bg': '#3B1FA8',
@@ -174,9 +175,12 @@ Paste these verbatim, and only the ones the carousel uses. `Footer` takes litera
 The accent pill above every title. Two or three words.
 
 ```tsx
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="self-start rounded-[8px] bg-(--cx-accent) px-[20px] py-[10px] text-[26px] leading-[1.2] font-extrabold tracking-[0.14em] text-(--cx-on-accent) uppercase">
+    <p
+      className="self-start rounded-[8px] bg-(--cx-accent) px-[20px] py-[10px] text-[26px] leading-[1.2] font-extrabold tracking-[0.14em] text-(--cx-on-accent) uppercase"
+      {...slide}
+    >
       {children}
     </p>
   )
@@ -186,17 +190,23 @@ function Eyebrow({ children }: { children: ReactNode }) {
 ### Hero (cover only) and Title
 
 ```tsx
-function Hero({ children }: { children: ReactNode }) {
+function Hero({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h1 className="font-(family-name:--cx-font-display) text-[150px] leading-[1.0] font-bold tracking-[-0.005em] uppercase">
+    <h1
+      className="font-(family-name:--cx-font-display) text-[150px] leading-[1.0] font-bold tracking-[-0.005em] uppercase"
+      {...slide}
+    >
       {children}
     </h1>
   )
 }
 
-function Title({ children }: { children: ReactNode }) {
+function Title({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h2 className="font-(family-name:--cx-font-display) text-[96px] leading-[1.05] font-bold uppercase">
+    <h2
+      className="font-(family-name:--cx-font-display) text-[96px] leading-[1.05] font-bold uppercase"
+      {...slide}
+    >
       {children}
     </h2>
   )
@@ -206,21 +216,27 @@ function Title({ children }: { children: ReactNode }) {
 ### Body
 
 ```tsx
-function Body({ children }: { children: ReactNode }) {
-  return <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)">{children}</p>
+function Body({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return (
+    <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)" {...slide}>
+      {children}
+    </p>
+  )
 }
 ```
 
 ### Point (numbered list row)
 
 ```tsx
-function Point({ n, children }: { n: string; children: ReactNode }) {
+function Point({ n, children, ...slide }: { n: string; children: ReactNode } & SlideProps) {
   return (
     <div className="flex items-baseline gap-[32px] border-t border-(--cx-rule) pt-[32px]">
       <span className="w-[64px] shrink-0 font-(family-name:--cx-font-display) text-[64px] leading-none font-bold text-(--cx-accent)">
         {n}
       </span>
-      <p className="text-[42px] leading-[1.35] font-bold">{children}</p>
+      <p className="text-[42px] leading-[1.35] font-bold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
@@ -318,11 +334,17 @@ function PhotoBackdrop({ src }: { src: string }) {
 Pass any `lucide-react` icon as `icon`. Use four in a `grid grid-cols-2 gap-[24px]`, with labels of up to about 4 words.
 
 ```tsx
-function IconCard({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+function IconCard({
+  icon: Icon,
+  children,
+  ...slide
+}: { icon: LucideIcon; children: ReactNode } & SlideProps) {
   return (
     <div className="flex flex-col gap-[32px] rounded-[24px] bg-(--cx-surface) p-[40px]">
       <Icon className="size-[72px] text-(--cx-accent)" strokeWidth={2} />
-      <p className="text-[40px] leading-[1.3] font-bold">{children}</p>
+      <p className="text-[40px] leading-[1.3] font-bold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
@@ -333,13 +355,16 @@ function IconCard({ icon: Icon, children }: { icon: LucideIcon; children: ReactN
 Only real quotes from the user's material, ≤ 20 words. `by` is the speaker.
 
 ```tsx
-function Quote({ children, by }: { children: ReactNode; by: string }) {
+function Quote({ children, by, ...slide }: { children: ReactNode; by: string } & SlideProps) {
   return (
     <figure className="flex flex-col gap-[40px]">
       <span className="font-(family-name:--cx-font-display) text-[200px] leading-[0.6] font-bold text-(--cx-accent)">
         “
       </span>
-      <blockquote className="font-(family-name:--cx-font-display) text-[84px] leading-[1.12] font-medium uppercase">
+      <blockquote
+        className="font-(family-name:--cx-font-display) text-[84px] leading-[1.12] font-medium uppercase"
+        {...slide}
+      >
         {children}
       </blockquote>
       <figcaption className="text-[30px] leading-[1.3] font-bold tracking-[0.14em] text-(--cx-muted) uppercase">
@@ -416,12 +441,13 @@ function Step({
   title,
   children,
   last = false,
+  ...slide
 }: {
   n: string
   title: string
   children: ReactNode
   last?: boolean
-}) {
+} & SlideProps) {
   return (
     <div className="flex gap-[36px]">
       <div className="flex flex-col items-center">
@@ -434,7 +460,9 @@ function Step({
         <p className="font-(family-name:--cx-font-display) text-[60px] leading-[1.05] font-bold uppercase">
           {title}
         </p>
-        <p className="text-[40px] leading-[1.4] font-medium text-(--cx-muted)">{children}</p>
+        <p className="text-[40px] leading-[1.4] font-medium text-(--cx-muted)" {...slide}>
+          {children}
+        </p>
       </div>
     </div>
   )

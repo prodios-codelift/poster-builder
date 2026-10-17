@@ -10,6 +10,23 @@ Source of truth for writing or editing `src/linkedin-carousels/carousels/<slug>/
 - No new dependencies. Available: `react`, `cn` (Tailwind class merge), Tailwind v4 utilities, `@solar-icons/react` and `lucide-react` icons, standard web APIs.
 - Never import from `themes/` — copy the theme's snippets in. Paste only the components you actually use: the project type-checks with `noUnusedLocals`, so an unused function fails `vp check`.
 
+## Inline-editable text (My posts → click to edit)
+
+In dev, a Vite plugin (`vite-plugin-slide-source.ts`) stamps text elements with `data-slide-file` / `data-slide-position` / `data-slide-element-type` so the studio can click-to-edit and write the text back to this file. For a **host element** (`<p>text</p>`) that just works. For a **component that renders its `children` as text** it only works if the component forwards the stamp to the element it renders:
+
+```tsx
+import type { SlideProps } from '../../slide-attrs'
+
+function Title({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return <h2 className="…" {...slide}>{children}</h2>   // spread LAST, on the element that renders {children}
+}
+```
+
+- Every text component (`Eyebrow`, `Hero`, `Title`, `Body`, the row component, …) takes `...slide` and spreads it on the element that renders `{children}`. When the component renders extra markup around the text (a dot, a cursor), spread on the element that directly contains the text, or on a `<span {...slide}>{children}</span>` around `{children}` when the text sits next to literal characters.
+- Put copy where it can be edited: JSX text (`<Title>Hello</Title>`) or a plain string. Copy that arrives through props, arrays or constants (`items={[…]}`, `{AUTHOR.name}`) is **not** click-editable.
+- Keep a component's text as the call site's only child — no `{expr}` or nested elements mixed into the copy.
+- Components that wrap other elements (`Frame`, `Scrap`, cards) do not need it. The dev server prints a warning (`renders text but does not forward slide props`) for a text component that forgets.
+
 ## File contract
 
 ```tsx
@@ -18,6 +35,7 @@ import { cn } from 'cn'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'   // ← only if a component renders text (see below)
 
 const TOKENS = { /* … */ } as CSSProperties
 const AUTHOR = { name: 'Ada Lovelace', handle: '@ada' }
@@ -226,6 +244,7 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - [ ] Theme carousels start with `// Theme: <id>` and use the theme's components verbatim.
 - [ ] `registry.ts` has the import + entry in the `carousels` array (My posts); `id` = slug.
 - [ ] `vp check` passes.
+- [ ] Every component that renders text as `children` takes `...slide` (`& SlideProps`) and spreads it on its text element; no dev warning about slide props.
 - [ ] Nothing else edited.
 
 ## Anti-patterns
@@ -241,3 +260,4 @@ For repeated visual items inside a slide (numbered rows, cards, stat tiles) defi
 - ❌ Hotlinked images, `animate-*` classes, `<style>` tags, global CSS.
 - ❌ Importing a theme's `index.tsx`, or editing engine/studio files.
 - ❌ Splitting a carousel into several files.
+- ❌ A text component without `...slide` (the text can't be edited inline in My posts).

@@ -71,6 +71,7 @@ import { cn } from 'cn'
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'
 
 const TOKENS = {
   '--cx-bg': '#FFFBEA',
@@ -158,9 +159,12 @@ Paste these verbatim, and only the ones the carousel uses. `Footer` takes litera
 Wrap a phrase: `<Mark>hit post</Mark>`.
 
 ```tsx
-function Mark({ children }: { children: ReactNode }) {
+function Mark({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <mark className="bg-transparent bg-[linear-gradient(transparent_52%,var(--cx-highlight)_52%,var(--cx-highlight)_92%,transparent_92%)] px-[6px] text-inherit [box-decoration-break:clone]">
+    <mark
+      className="bg-transparent bg-[linear-gradient(transparent_52%,var(--cx-highlight)_52%,var(--cx-highlight)_92%,transparent_92%)] px-[6px] text-inherit [box-decoration-break:clone]"
+      {...slide}
+    >
       {children}
     </mark>
   )
@@ -172,9 +176,12 @@ function Mark({ children }: { children: ReactNode }) {
 Handwritten, lowercase.
 
 ```tsx
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="-rotate-2 self-start font-(family-name:--cx-font-hand) text-[48px] leading-[1.1] font-semibold text-(--cx-pen)">
+    <p
+      className="-rotate-2 self-start font-(family-name:--cx-font-hand) text-[48px] leading-[1.1] font-semibold text-(--cx-pen)"
+      {...slide}
+    >
       {children}
     </p>
   )
@@ -204,21 +211,27 @@ function Title({ children }: { children: ReactNode }) {
 ### Body
 
 ```tsx
-function Body({ children }: { children: ReactNode }) {
-  return <p className="text-[40px] leading-[1.5] font-medium">{children}</p>
+function Body({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return (
+    <p className="text-[40px] leading-[1.5] font-medium" {...slide}>
+      {children}
+    </p>
+  )
 }
 ```
 
 ### CheckItem (list row)
 
 ```tsx
-function CheckItem({ children }: { children: ReactNode }) {
+function CheckItem({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
     <div className="flex items-center gap-[28px]">
       <span className="flex size-[56px] shrink-0 items-center justify-center rounded-[10px] border-[4px] border-(--cx-pen) font-(family-name:--cx-font-hand) text-[56px] leading-none font-semibold text-(--cx-pen)">
         ✓
       </span>
-      <p className="text-[40px] leading-[1.35] font-semibold">{children}</p>
+      <p className="text-[40px] leading-[1.35] font-semibold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
@@ -227,9 +240,12 @@ function CheckItem({ children }: { children: ReactNode }) {
 ### Note (handwritten aside)
 
 ```tsx
-function Note({ children }: { children: ReactNode }) {
+function Note({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="rotate-[-1.5deg] self-start font-(family-name:--cx-font-hand) text-[46px] leading-[1.15] font-semibold text-(--cx-pen)">
+    <p
+      className="rotate-[-1.5deg] self-start font-(family-name:--cx-font-hand) text-[46px] leading-[1.15] font-semibold text-(--cx-pen)"
+      {...slide}
+    >
       {children}
     </p>
   )
@@ -308,13 +324,19 @@ function Photo({ src, alt, className }: { src: string; alt: string; className?: 
 Pass any `lucide-react` icon as `icon`. Use four in a `grid grid-cols-2 gap-[24px]`, with labels of up to about 4 words.
 
 ```tsx
-function IconCard({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+function IconCard({
+  icon: Icon,
+  children,
+  ...slide
+}: { icon: LucideIcon; children: ReactNode } & SlideProps) {
   return (
     <div className="flex items-center gap-[44px] py-[16px]">
       <span className="flex size-[136px] shrink-0 -rotate-3 items-center justify-center rounded-full border-[4px] border-(--cx-pen)">
         <Icon className="size-[80px] text-(--cx-pen)" strokeWidth={2} />
       </span>
-      <p className="text-[44px] leading-[1.25] font-bold">{children}</p>
+      <p className="text-[44px] leading-[1.25] font-bold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
@@ -325,13 +347,16 @@ function IconCard({ icon: Icon, children }: { icon: LucideIcon; children: ReactN
 Only real quotes from the user's material, ≤ 20 words. `by` is the speaker.
 
 ```tsx
-function Quote({ children, by }: { children: ReactNode; by: string }) {
+function Quote({ children, by, ...slide }: { children: ReactNode; by: string } & SlideProps) {
   return (
     <figure className="flex flex-col gap-[32px]">
       <span className="font-(family-name:--cx-font-hand) text-[200px] leading-[0.5] font-semibold text-(--cx-pen)">
         “
       </span>
-      <blockquote className="font-(family-name:--cx-font-display) text-[64px] leading-[1.18] font-extrabold tracking-[-0.03em]">
+      <blockquote
+        className="font-(family-name:--cx-font-display) text-[64px] leading-[1.18] font-extrabold tracking-[-0.03em]"
+        {...slide}
+      >
         {children}
       </blockquote>
       <figcaption className="-rotate-1 self-start font-(family-name:--cx-font-hand) text-[50px] leading-[1.1] font-semibold text-(--cx-pen)">
@@ -399,12 +424,13 @@ function Step({
   title,
   children,
   last = false,
+  ...slide
 }: {
   n: string
   title: string
   children: ReactNode
   last?: boolean
-}) {
+} & SlideProps) {
   return (
     <div className={cn('flex items-start gap-[32px]', !last && 'pb-[56px]')}>
       <span className="flex size-[80px] shrink-0 -rotate-6 items-center justify-center rounded-full border-[4px] border-(--cx-pen) font-(family-name:--cx-font-hand) text-[52px] leading-none font-semibold text-(--cx-pen)">
@@ -412,7 +438,9 @@ function Step({
       </span>
       <div className="flex flex-col gap-[6px] pt-[6px]">
         <p className="text-[48px] leading-[1.2] font-extrabold tracking-[-0.02em]">{title}</p>
-        <p className="text-[40px] leading-[1.45] font-medium">{children}</p>
+        <p className="text-[40px] leading-[1.45] font-medium" {...slide}>
+          {children}
+        </p>
       </div>
     </div>
   )

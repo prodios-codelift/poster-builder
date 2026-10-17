@@ -2,34 +2,18 @@ import { createServerFn } from '@tanstack/react-start'
 
 import type { CarouselTextEdit } from './edit-carousel-source'
 
-const CAROUSEL_ID = /^[a-z0-9-]+$/
+const CAROUSELS_DIR = 'src/linkedin-carousels/carousels'
 
 type SaveCarouselTextInput = {
-  carouselId: string
   edits: CarouselTextEdit[]
-}
-
-function isSourceLocation(value: unknown): value is { line: number; column: number } {
-  if (!value || typeof value !== 'object') return false
-  const loc = value as { line?: unknown; column?: unknown }
-  return (
-    typeof loc.line === 'number' &&
-    Number.isFinite(loc.line) &&
-    typeof loc.column === 'number' &&
-    Number.isFinite(loc.column)
-  )
 }
 
 function isTextEdit(value: unknown): value is CarouselTextEdit {
   if (!value || typeof value !== 'object') return false
-  const edit = value as {
-    locations?: unknown
-    prevText?: unknown
-    nextText?: unknown
-  }
+  const edit = value as Record<string, unknown>
   return (
-    Array.isArray(edit.locations) &&
-    edit.locations.every(isSourceLocation) &&
+    typeof edit.file === 'string' &&
+    typeof edit.position === 'string' &&
     typeof edit.prevText === 'string' &&
     typeof edit.nextText === 'string'
   )
@@ -39,19 +23,17 @@ function validateInput(data: unknown): SaveCarouselTextInput {
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid save payload')
   }
-  const body = data as { carouselId?: unknown; edits?: unknown }
-  if (typeof body.carouselId !== 'string' || !CAROUSEL_ID.test(body.carouselId)) {
-    throw new Error('Invalid carousel id')
-  }
+  const body = data as { edits?: unknown }
   if (!Array.isArray(body.edits) || !body.edits.every(isTextEdit)) {
     throw new Error('Invalid edits')
   }
-  return { carouselId: body.carouselId, edits: body.edits }
+  return { edits: body.edits }
 }
 
 /**
- * Dev-only: splice literal text edits into `carousels/<id>/index.tsx`.
- * Theme files under `themes/` are never a valid write target.
+ * Dev-only: write inline text edits back to the carousel source file named by
+ * each edit's `file` (stamped by the slide-source Vite plugin). Only `.tsx`
+ * files under `carousels/` are valid targets; themes are never written.
  */
 export const saveCarouselText = createServerFn({ method: 'POST' })
   .validator(validateInput)
@@ -59,43 +41,44 @@ export const saveCarouselText = createServerFn({ method: 'POST' })
     if (!import.meta.env.DEV) {
       throw new Error('Inline carousel editing is only available in development')
     }
-
-    const { carouselId, edits } = data
-    if (edits.length === 0) {
+    if (data.edits.length === 0) {
       return { ok: true as const }
     }
 
-    const [{ readFile, writeFile }, { applyCarouselTextEdits }] = await Promise.all([
+    const [{ readFile, writeFile, rename }, { applyCarouselTextEdits }, path] = await Promise.all([
       import('node:fs/promises'),
       import('./edit-carousel-source'),
+      import('node:path'),
     ])
-    const path = await import('node:path')
 
-    const filePath = path.resolve(
-      process.cwd(),
-      'src/linkedin-carousels/carousels',
-      carouselId,
-      'index.tsx',
-    )
-    const carouselsRoot = path.resolve(process.cwd(), 'src/linkedin-carousels/carousels')
-    if (!filePath.startsWith(`${carouselsRoot}${path.sep}`)) {
-      throw new Error('Invalid carousel path')
+    const carouselsRoot = path.resolve(process.cwd(), CAROUSELS_DIR)
+    const byFile = new Map<string, CarouselTextEdit[]>()
+    for (const edit of data.edits) {
+      const filePath = path.resolve(process.cwd(), edit.file)
+      if (!filePath.startsWith(`${carouselsRoot}${path.sep}`) || !filePath.endsWith('.tsx')) {
+        throw new Error(`Invalid carousel file: ${edit.file}`)
+      }
+      byFile.set(filePath, [...(byFile.get(filePath) ?? []), edit])
     }
 
-    let source: string
-    try {
-      source = await readFile(filePath, 'utf8')
-    } catch {
-      throw new Error(`Carousel file not found: ${carouselId}`)
+    // Resolve every file first so a bad edit never leaves a partial save.
+    const writes: { filePath: string; source: string }[] = []
+    for (const [filePath, edits] of byFile) {
+      let source: string
+      try {
+        source = await readFile(filePath, 'utf8')
+      } catch {
+        throw new Error(`Carousel file not found: ${path.relative(process.cwd(), filePath)}`)
+      }
+      const result = applyCarouselTextEdits(source, edits)
+      if (!result.ok) throw new Error(result.error)
+      if (result.source !== source) writes.push({ filePath, source: result.source })
     }
 
-    const result = applyCarouselTextEdits(source, edits)
-    if (!result.ok) {
-      throw new Error(result.error)
-    }
-
-    if (result.source !== source) {
-      await writeFile(filePath, result.source, 'utf8')
+    for (const { filePath, source } of writes) {
+      const tmp = `${filePath}.tmp`
+      await writeFile(tmp, source, 'utf8')
+      await rename(tmp, filePath)
     }
 
     return { ok: true as const }

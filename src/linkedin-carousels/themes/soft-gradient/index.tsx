@@ -4,6 +4,7 @@ import { ArrowRight, Check, Eye, Heart, type LucideIcon, Palette, Type, X } from
 import type { CSSProperties, ReactNode } from 'react'
 
 import { LinkedInCarouselSlide } from '../../linkedin-carousel-slide'
+import type { SlideProps } from '../../slide-attrs'
 import coverPhoto from './assets/cover.jpg'
 import splitPhoto from './assets/split.jpg'
 
@@ -90,41 +91,56 @@ function MetaBar({ left, right }: { left: string; right: string }) {
   )
 }
 
-function Eyebrow({ children }: { children: ReactNode }) {
+function Eyebrow({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <p className="self-start rounded-full border-[2px] border-(--cx-accent) px-[22px] py-[8px] text-[26px] leading-[1.2] font-bold tracking-[0.12em] text-(--cx-accent) uppercase">
+    <p
+      className="self-start rounded-full border-[2px] border-(--cx-accent) px-[22px] py-[8px] text-[26px] leading-[1.2] font-bold tracking-[0.12em] text-(--cx-accent) uppercase"
+      {...slide}
+    >
       {children}
     </p>
   )
 }
 
-function Hero({ children }: { children: ReactNode }) {
+function Hero({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h1 className="font-(family-name:--cx-font-display) text-[120px] leading-[1.0] font-extrabold tracking-[-0.02em] uppercase">
+    <h1
+      className="font-(family-name:--cx-font-display) text-[120px] leading-[1.0] font-extrabold tracking-[-0.02em] uppercase"
+      {...slide}
+    >
       {children}
     </h1>
   )
 }
 
-function Title({ children }: { children: ReactNode }) {
+function Title({ children, ...slide }: { children: ReactNode } & SlideProps) {
   return (
-    <h2 className="font-(family-name:--cx-font-display) text-[80px] leading-[1.05] font-extrabold tracking-[-0.015em] uppercase">
+    <h2
+      className="font-(family-name:--cx-font-display) text-[80px] leading-[1.05] font-extrabold tracking-[-0.015em] uppercase"
+      {...slide}
+    >
       {children}
     </h2>
   )
 }
 
-function Body({ children }: { children: ReactNode }) {
-  return <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)">{children}</p>
+function Body({ children, ...slide }: { children: ReactNode } & SlideProps) {
+  return (
+    <p className="text-[40px] leading-[1.45] font-medium text-(--cx-muted)" {...slide}>
+      {children}
+    </p>
+  )
 }
 
-function Point({ n, children }: { n: string; children: ReactNode }) {
+function Point({ n, children, ...slide }: { n: string; children: ReactNode } & SlideProps) {
   return (
     <div className="flex items-center gap-[28px] rounded-[24px] border border-(--cx-rule) bg-(--cx-surface) px-[36px] py-[32px]">
       <span className="w-[56px] shrink-0 font-(family-name:--cx-font-display) text-[52px] leading-none font-extrabold text-(--cx-accent)">
         {n}
       </span>
-      <p className="text-[40px] leading-[1.3] font-bold">{children}</p>
+      <p className="text-[40px] leading-[1.3] font-bold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
@@ -183,22 +199,31 @@ function Photo({ src, alt, className }: { src: string; alt: string; className?: 
   )
 }
 
-function IconCard({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+function IconCard({
+  icon: Icon,
+  children,
+  ...slide
+}: { icon: LucideIcon; children: ReactNode } & SlideProps) {
   return (
     <div className="flex flex-col gap-[32px] rounded-[28px] border border-(--cx-rule) bg-(--cx-surface) p-[40px]">
       <Icon className="size-[72px] text-(--cx-accent)" strokeWidth={2} />
-      <p className="text-[40px] leading-[1.3] font-bold">{children}</p>
+      <p className="text-[40px] leading-[1.3] font-bold" {...slide}>
+        {children}
+      </p>
     </div>
   )
 }
 
-function Quote({ children, by }: { children: ReactNode; by: string }) {
+function Quote({ children, by, ...slide }: { children: ReactNode; by: string } & SlideProps) {
   return (
     <figure className="flex flex-col gap-[40px]">
       <span className="font-(family-name:--cx-font-display) text-[200px] leading-[0.6] font-extrabold text-(--cx-accent)">
         “
       </span>
-      <blockquote className="font-(family-name:--cx-font-display) text-[72px] leading-[1.1] font-extrabold tracking-[-0.015em] uppercase">
+      <blockquote
+        className="font-(family-name:--cx-font-display) text-[72px] leading-[1.1] font-extrabold tracking-[-0.015em] uppercase"
+        {...slide}
+      >
         {children}
       </blockquote>
       <figcaption className="text-[28px] leading-[1.2] font-bold tracking-[0.1em] text-(--cx-muted) uppercase">
@@ -259,12 +284,13 @@ function Step({
   title,
   children,
   last = false,
+  ...slide
 }: {
   n: string
   title: string
   children: ReactNode
   last?: boolean
-}) {
+} & SlideProps) {
   return (
     <div className="flex gap-[36px]">
       <div className="flex flex-col items-center">
@@ -277,7 +303,9 @@ function Step({
         <p className="font-(family-name:--cx-font-display) text-[52px] leading-[1.1] font-extrabold uppercase">
           {title}
         </p>
-        <p className="text-[40px] leading-[1.4] font-medium text-(--cx-muted)">{children}</p>
+        <p className="text-[40px] leading-[1.4] font-medium text-(--cx-muted)" {...slide}>
+          {children}
+        </p>
       </div>
     </div>
   )

@@ -64,7 +64,7 @@ Follow `references/authoring.md`. With a theme:
 
 1. Start the file with `// Theme: <id>` (or `// Theme: <id> · <palette-key>` for a non-default palette).
 2. Paste the theme's imports, `TOKENS`, `AUTHOR` and `Frame`, then **only the fixed components you use** (unused ones fail `vp check`). Fill in `AUTHOR`. For a non-default palette, replace the colour lines in `TOKENS` with that variant's block from `## Palette variants`, keeping the font lines. Never copy `PALETTES`.
-3. The theme's `theme.md` is the only source to copy from; its demo `index.tsx` contains the same code, so never import it.
+3. The theme's `theme.md` is the only source to copy from (its text components already forward `...slide`; keep that — see *Inline-editable text* in `references/authoring.md`); its demo `index.tsx` contains the same code, so never import it.
 4. For each slide type in the outline, start from that theme's slide recipe and change only the copy and footer numbers. When you use photos or icons, follow the theme's **Images and icons** section: copy the photo into the carousel's `assets/` with a `CREDITS.md` row, and import only the icons you use.
 5. If the carousel needs a piece the theme doesn't define, compose it from the theme's tokens, type scale and components, inside the theme's accent and caps rules.
 6. When several slides share a layout, use a slide template (see *Slide templates* in `references/authoring.md`).
