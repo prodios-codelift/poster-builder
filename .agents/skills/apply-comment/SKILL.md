@@ -36,7 +36,7 @@ Your job: read those markers, perform the described edits, and delete the marker
 ## Procedure
 
 1. **Identify the target file(s).**
-   - If the user names a carousel or theme (`uae-omnichannel-crm`, `noir-luxe`, etc.), work on that single `index.tsx` under `src/linkedin-carousels/carousels/<id>/` or `src/linkedin-carousels/themes/<id>/`.
+   - If the user names a carousel or theme (`first-engineer-hire`, `noir-luxe`, etc.), work on that single `index.tsx` under `src/linkedin-carousels/carousels/<id>/` or `src/linkedin-carousels/themes/<id>/`.
    - If they say "all" or don't specify, scan every `src/linkedin-carousels/carousels/*/index.tsx` and `src/linkedin-carousels/themes/*/index.tsx`. Process each file one at a time.
 
 2. **Read the file and find all markers.**

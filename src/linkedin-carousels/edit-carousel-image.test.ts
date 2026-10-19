@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-
-import { parse } from '@babel/parser'
 import { describe, expect, it } from 'vite-plus/test'
 
 import { applyCarouselImageSwap, importUrl } from './edit-carousel-image'
@@ -14,15 +11,6 @@ function positionOf(source: string, needle: string): string {
   const before = source.slice(0, index)
   const lastNl = before.lastIndexOf('\n')
   return `${before.split('\n').length}:${lastNl < 0 ? index : index - lastNl - 1}`
-}
-
-function parses(code: string): boolean {
-  try {
-    parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] })
-    return true
-  } catch {
-    return false
-  }
 }
 
 describe('importUrl', () => {
@@ -188,37 +176,5 @@ export const A = () => <img src={hero} alt={logo} />
       assetName: 'a.png',
     })
     expect(result.ok).toBe(false)
-  })
-
-  it('swaps the Dubai photo and a logo in the real uae-omnichannel-crm carousel', () => {
-    const file = 'src/linkedin-carousels/carousels/uae-omnichannel-crm/index.tsx'
-    const source = readFileSync(
-      new URL('./carousels/uae-omnichannel-crm/index.tsx', import.meta.url),
-      'utf8',
-    )
-    const base = '/src/linkedin-carousels/carousels/uae-omnichannel-crm'
-
-    const photo = applyCarouselImageSwap(source, {
-      file,
-      position: positionOf(source, '<img src={src}'),
-      src: `${base}/assets/dubai.jpg`,
-      assetName: 'skyline.jpg',
-    })
-    expect(photo.ok).toBe(true)
-    if (!photo.ok) return
-    expect(photo.source).toContain(`import skyline from '@assets/skyline.jpg'`)
-    expect(photo.source).not.toContain('dubaiPhoto')
-    expect(parses(photo.source)).toBe(true)
-
-    const logo = applyCarouselImageSwap(source, {
-      file,
-      position: positionOf(source, '<img src={logo}'),
-      src: `${base}/assets/logos/gmail.svg`,
-      assetName: 'outlook.svg',
-    })
-    expect(logo.ok).toBe(true)
-    if (!logo.ok) return
-    expect(logo.source).toContain(`{ label: 'Email', logo: outlook }`)
-    expect(parses(logo.source)).toBe(true)
   })
 })

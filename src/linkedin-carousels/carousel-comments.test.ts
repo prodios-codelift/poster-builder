@@ -77,8 +77,8 @@ describe('isCommentableFile', () => {
 
 describe('carouselSourceFile', () => {
   it('maps post ids to their carousel file', () => {
-    expect(carouselSourceFile('uae-omnichannel-crm')).toBe(
-      'src/linkedin-carousels/carousels/uae-omnichannel-crm/index.tsx',
+    expect(carouselSourceFile('first-engineer-hire')).toBe(
+      'src/linkedin-carousels/carousels/first-engineer-hire/index.tsx',
     )
   })
 
