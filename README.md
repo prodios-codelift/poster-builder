@@ -5,8 +5,8 @@ Welcome to your new TanStack Start app!
 To run this application:
 
 ```bash
-bun install
-bun --bun run dev
+pnpm install
+pnpm dev
 ```
 
 # Building For Production
@@ -14,7 +14,20 @@ bun --bun run dev
 To build this application for production:
 
 ```bash
-bun --bun run build
+pnpm build
+```
+
+## Vercel Sandbox snapshot
+
+`vp run sandbox:snapshot` builds a [Vercel Sandbox](https://vercel.com/docs/sandbox) snapshot laid out like the prodios-autopilot starters. It clones this repo (`GIT_REVISION`, default `main`) into `/vercel/sandbox/poster-builder`, uploads the local `package.json`, `pnpm-workspace.yaml` and `pnpm-lock.yaml` over the clone, runs `pnpm install --frozen-lockfile` and takes the snapshot. It doesn't start the dev server. Progress goes to stderr, and stdout gets only the snapshot id.
+
+1. Copy `.env.example` to `.env.local` and fill in the auth: either `vercel link && vercel env pull .env.local` (OIDC) or `VERCEL_TOKEN` + `VERCEL_TEAM_ID` + `VERCEL_PROJECT_ID`.
+2. Run `vp run sandbox:snapshot`.
+
+The sandbox clones from GitHub, so it only sees pushed commits. A snapshot keeps files, not processes. A sandbox created from it has to start the server itself, passing its own host the same way `next-shadcn-starter` takes `DEV_ORIGINS`:
+
+```sh
+cd /vercel/sandbox/poster-builder && DEV_ORIGINS=<sandbox host> pnpm dev >> /tmp/dev-server.log 2>&1
 ```
 
 ## Styling
