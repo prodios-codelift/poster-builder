@@ -1,11 +1,11 @@
 ---
 name: apply-comment
-description: Apply pending @slide-comment markers written by the LinkedIn carousel studio comment mode. Use when the user asks to "apply comments", "process slide comments", "apply the inspector comments", or references markers left inside `src/linkedin-carousels/carousels/**` or `src/linkedin-carousels/themes/**`.
+description: Apply pending @slide-comment markers written by the LinkedIn carousel studio comment mode. Use when the user runs /apply-comment or asks to "apply comments", "apply slide comments", "process slide comments", "apply the inspector comments", or references markers left inside `src/linkedin-carousels/carousels/**` or `src/linkedin-carousels/themes/**`.
 ---
 
 # Apply slide comments
 
-The carousel studio has a **Comment** mode (header toggle, dev only). The user clicks a rendered slide element stamped with `data-tsd-source` and attaches a textual note (e.g. *"make this red"*, *"change to 'Fresh headline'"*). Each comment is persisted as an in-source JSX marker inside the carousel or theme file.
+The carousel studio has a **Comment** mode (header toggle, dev only). The user clicks a rendered slide element stamped with `data-tsd-source` and attaches a textual note (e.g. *"make this red"*, *"change to 'Fresh headline'"*). Each comment is persisted as an in-source JSX marker inside the carousel or theme file. The studio pins each pending comment to its element, lets the user edit or delete it, and tells them to run `/apply-comment` to apply them.
 
 Your job: read those markers, perform the described edits, and delete the markers.
 
@@ -36,7 +36,7 @@ Your job: read those markers, perform the described edits, and delete the marker
 ## Procedure
 
 1. **Identify the target file(s).**
-   - If the user names a carousel or theme (`uae-omnichannel-crm`, `noir-luxe`, etc.), work on that single `index.tsx` under `src/linkedin-carousels/carousels/<id>/` or `src/linkedin-carousels/themes/<id>/`.
+   - If the user names a carousel or theme (`first-engineer-hire`, `noir-luxe`, etc.), work on that single `index.tsx` under `src/linkedin-carousels/carousels/<id>/` or `src/linkedin-carousels/themes/<id>/`.
    - If they say "all" or don't specify, scan every `src/linkedin-carousels/carousels/*/index.tsx` and `src/linkedin-carousels/themes/*/index.tsx`. Process each file one at a time.
 
 2. **Read the file and find all markers.**
