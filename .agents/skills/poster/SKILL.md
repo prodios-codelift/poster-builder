@@ -1,6 +1,6 @@
 ---
 name: poster
-description: Use this skill when the user wants a single-image social media poster or graphic in this poster-builder repo. Triggers on phrases like "make a poster", "create a social post graphic", "single-image post", "announcement graphic", "event poster", "webinar poster", "hiring post", "launch graphic", "quote card", "stat card", "Instagram post", "story graphic", "X / Twitter image", or "a visual for this post". Works like a social media coordinator: brief, concept, copy, imagery (Unsplash photos, Solar or Lucide icons), build, then caption and alt text. Do NOT use for multi-slide carousels (use `linkedin-carousel`) or for creating themes (use `linkedin-carousel-theme`).
+description: 'Use this skill when the user wants a single-image social media poster or graphic in this poster-builder repo. Triggers on phrases like "make a poster", "create a social post graphic", "single-image post", "announcement graphic", "event poster", "webinar poster", "hiring post", "launch graphic", "quote card", "stat card", "Instagram post", "story graphic", "X / Twitter image", or "a visual for this post". Works like a social media coordinator: brief, concept, copy, imagery (Unsplash photos, Solar or Lucide icons), build, then caption and alt text. Do NOT use for multi-slide carousels (use `linkedin-carousel`) or for creating themes (use `linkedin-carousel-theme`).'
 ---
 
 # Build a social media poster
